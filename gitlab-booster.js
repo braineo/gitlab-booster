@@ -11,7 +11,7 @@
 // @grant        none
 // ==/UserScript==
 
-/* global $ */
+/* global $ waitForKeyElements */
 
 (function () {
   'use strict';
@@ -182,11 +182,11 @@
             mergeRequest,
           );
 
-          const statusSvg = mergeRequest.find('.item-title svg')[0];
+          const statusSvg = mergeRequest.querySelector('.item-title svg');
           const mergeRequestStatus = statusSvg.getAttribute('aria-label');
           switch (mergeRequestStatus) {
             case 'opened': {
-              mergeRequest.css({ 'background-color': '#f9eeda' });
+              $(mergeRequest).css({ 'background-color': '#f9eeda' });
               break;
             }
             case 'merged': {
@@ -194,7 +194,7 @@
             }
 
             case 'closed': {
-              mergeRequest.css({
+              $(mergeRequest).css({
                 'background-color': '#c1c1c14d',
                 filter: 'grayscale(1)',
                 'text-decoration': 'line-through',
@@ -204,15 +204,16 @@
             }
           }
 
-          const mergeRequestUrl = mergeRequest.find('.item-title a')[0].href;
+          const mergeRequestUrl =
+            mergeRequest.querySelector('.item-title a').href;
 
           const diffsMeta = await fetchGitLabData(
             `${mergeRequestUrl}/diffs_metadata.json`,
           );
 
-          const metaDiv = mergeRequest.find(
+          const metaDiv = mergeRequest.querySelector(
             '.item-meta .item-attributes-area',
-          )[0];
+          );
 
           await addMergeRequestThreadMeta(metaDiv, mergeRequestUrl);
 

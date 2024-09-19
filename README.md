@@ -4,7 +4,22 @@ This add long missing features in the merge request list and issue detail.
 
 ## Usage
 
-This is a tampermonkey script, just copy and paste into your tampermonkey to enable it. For self-hosted gitlab instances, add additional match rules in the user script section.
+
+
+### Install from greasyfork.org
+
+https://greasyfork.org/en/scripts/509169-gitlab-booster
+
+### Copy and paste
+
+This is a tampermonkey script, you can also copy and paste into your tampermonkey to enable it.
+
+
+### self-hosted gitlab instances
+
+if you are using tampermonkey. In the settings of the installed script. Add your site in the `User matches`
+
+Or add additional match rules in the user script header section.
 
 ```
 // @match        https://mygitlab.com/*

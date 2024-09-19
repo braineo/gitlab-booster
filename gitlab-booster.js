@@ -65,7 +65,7 @@
           class:
             'diff-stats-group gl-text-red-500 gl-display-flex gl-align-items-center bold',
         }).append(
-          $('<span/>').text('−'),
+          $('<span/>').text('-'),
           $('<span/>').text(`${deleteLinCount}`),
         ),
       )
@@ -181,6 +181,28 @@
             'inserting merge request meta to related merge requests',
             mergeRequest,
           );
+
+          const statusSvg = mergeRequest.find('.item-title svg')[0];
+          const mergeRequestStatus = statusSvg.getAttribute('aria-label');
+          switch (mergeRequestStatus) {
+            case 'opened': {
+              mergeRequest.css({ 'background-color': '#f9eeda' });
+              break;
+            }
+            case 'merged': {
+              return;
+            }
+
+            case 'closed': {
+              mergeRequest.css({
+                'background-color': '#c1c1c14d',
+                filter: 'grayscale(1)',
+                'text-decoration': 'line-through',
+              });
+              // no need to show the closed details
+              return;
+            }
+          }
 
           const mergeRequestUrl = mergeRequest.find('.item-title a')[0].href;
 

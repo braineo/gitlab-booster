@@ -235,22 +235,14 @@
       const issueUrl = issue.querySelector('a').href;
 
       $(issue).on('click', function () {
-        if (!layout.querySelector('#close-iframe-button')) {
-          $(layout).append(
+        if (!document.querySelector('#close-iframe-button')) {
+          const topBar = document.querySelector('.top-bar-container');
+          $(topBar).append(
             $('<button/>', {
               id: 'close-iframe-button',
               class:
                 'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
-            })
-              .css({
-                // just fake the position for closing panel
-                position: 'fixed',
-                right: '8px',
-                top: '8px',
-                // the top bar has z-index 210
-                'z-index': 300,
-              })
-              .append($('<span/>').text('close issue panel')),
+            }).append($('<span/>').text('Close Issue Panel')),
           );
 
           $('#close-iframe-button').on('click', function () {

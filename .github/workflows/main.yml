@@ -1,0 +1,10 @@
+name: Typos
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: debian-latest
+    steps:
+      - name: typos-action
+        uses: crate-ci/typos@v1.20.1

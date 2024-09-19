@@ -228,13 +228,6 @@
   }
 
   function enhanceIssueList() {
-    const head = document.querySelector('head');
-    // <meta http-equiv="Content-Security-Policy" content="default-src 'self'">
-    $('<meta />', {
-      'http-equiv': 'Content-Security-Policy',
-      content: `default-src 'self' ${window.location.origin}`,
-    }).appendTo(head);
-
     const layout = document.querySelector('div.layout-page');
     $(layout).css({ display: 'flex' });
 

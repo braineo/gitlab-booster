@@ -6,7 +6,7 @@
 // @author       braineo
 // @match        https://gitlab.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=gitlab.com
-// @require      https://gist.github.com/raw/2625891/waitForKeyElements.js
+// @require      https://cdn.jsdelivr.net/gh/CoeJoder/waitForKeyElements.js@v1.3/waitForKeyElements.js
 // @require      https://code.jquery.com/jquery-3.7.1.min.js
 // @grant        none
 // ==/UserScript==

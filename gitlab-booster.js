@@ -125,7 +125,7 @@
 
     file_loop: for (const file of diffsMeta.diff_files) {
       for (const excludeRegexp of excludeRegexps) {
-        if (excludeRegexp.file.new_path) {
+        if (excludeRegexp.test(file.new_path)) {
           continue file_loop;
         }
       }

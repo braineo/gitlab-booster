@@ -8,7 +8,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=gitlab.com
 // @require      https://cdn.jsdelivr.net/gh/CoeJoder/waitForKeyElements.js@16f3c035e2c41f8af0437a1eca1c9899e722ec37/waitForKeyElements.js
 // @require      https://code.jquery.com/jquery-3.7.1.min.js
-// @grant        none
+// @grant        GM_addElement
 // ==/UserScript==
 
 /* global $ waitForKeyElements */
@@ -226,6 +226,33 @@
     );
   }
 
+  function enhanceIssueList() {
+    const head = document.querySelector('head');
+    // <meta http-equiv="Content-Security-Policy" content="default-src 'self'">
+    $('<meta />', {
+      'http-equiv': 'Content-Security-Policy',
+      content: `default-src 'self' ${window.location.origin}`,
+    }).appendTo(head);
+
+    const layout = document.querySelector('div.layout-page');
+    $(layout).css({ display: 'flex' });
+
+    const issues = document.querySelectorAll('ul.issues-list > li');
+    waitForKeyElements('ul.issues-list > li', function (issue) {
+      const issueUrl = issue.querySelector('a').href;
+      $(issue).on('click', function () {
+        // $('#issue-booster').attr('src', issueUrl);
+        $('#issue-booster').remove();
+
+        GM_addElement(layout, 'iframe', {
+          id: 'issue-booster',
+          src: issueUrl,
+          style: 'flex-basis: 40%;',
+        });
+      });
+    });
+  }
+
   //
   // Entry point
   //
@@ -233,6 +260,8 @@
   const issueDetailRegex = /\/issues\/\d+/;
 
   const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
+
+  const issueListRegex = /\/issues(?!\/\d+)/;
 
   // Run the script when the DOM is fully loaded
   window.onload = function () {
@@ -242,6 +271,10 @@
 
     if (issueDetailRegex.test(window.location.href)) {
       enhanceIssueDetailPage();
+    }
+
+    if (issueListRegex.test(window.location.href)) {
+      enhanceIssueList();
     }
   };
 })();

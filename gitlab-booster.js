@@ -105,12 +105,40 @@
       `${mergeRequestUrl}/diffs_metadata.json`,
     );
 
-    createDiffStat(
-      element,
-      diffsMeta.diff_files.length,
-      diffsMeta.added_lines,
-      diffsMeta.removed_lines,
-    );
+    const { addedLineCount, deleteLinCount, fileCount } =
+      dehydrateDiff(diffsMeta);
+
+    createDiffStat(element, fileCount, addedLineCount, deleteLinCount);
+  }
+
+  function dehydrateDiff(diffsMeta) {
+    const excludeRegexps = [
+      /\.po$/, // translation files
+      /mocks/, // mocks
+      /(spec|test)\.\w+$/, // tests
+      /package-lock.json/, // auto generated files
+    ];
+
+    let addedLineCount = 0;
+    let deleteLinCount = 0;
+    let fileCount = 0;
+
+    file_loop: for (const file of diffsMeta.diff_files) {
+      for (const excludeRegexp of excludeRegexps) {
+        if (excludeRegexp.file.new_path) {
+          continue file_loop;
+        }
+      }
+      addedLineCount += file.added_lines;
+      deleteLinCount += file.removed_lines;
+      fileCount += 1;
+    }
+
+    return {
+      addedLineCount,
+      deleteLinCount,
+      fileCount,
+    };
   }
 
   //

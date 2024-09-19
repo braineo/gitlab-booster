@@ -8,6 +8,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=gitlab.com
 // @require      https://cdn.jsdelivr.net/gh/CoeJoder/waitForKeyElements.js@16f3c035e2c41f8af0437a1eca1c9899e722ec37/waitForKeyElements.js
 // @require      https://code.jquery.com/jquery-3.7.1.min.js
+// @license      AGPL-3.0-or-later
 // @grant        GM_addElement
 // ==/UserScript==
 

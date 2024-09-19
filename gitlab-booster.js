@@ -237,17 +237,42 @@
     const layout = document.querySelector('div.layout-page');
     $(layout).css({ display: 'flex' });
 
-    const issues = document.querySelectorAll('ul.issues-list > li');
     waitForKeyElements('ul.issues-list > li', function (issue) {
       const issueUrl = issue.querySelector('a').href;
-      $(issue).on('click', function () {
-        // $('#issue-booster').attr('src', issueUrl);
-        $('#issue-booster').remove();
 
+      $(issue).on('click', function () {
+        if (!layout.querySelector('#close-iframe-button')) {
+          $(layout).append(
+            $('<button/>', {
+              id: 'close-iframe-button',
+              class:
+                'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
+            })
+              .css({
+                // just fake the position for closing panel
+                position: 'fixed',
+                right: '8px',
+                top: '8px',
+                // the top bar has z-index 210
+                'z-index': 300,
+              })
+              .append($('<span/>').text('close issue panel')),
+          );
+
+          $('#close-iframe-button').on('click', function () {
+            $('#issue-booster').remove();
+            $('#close-iframe-button').remove();
+          });
+        }
+
+        $('#issue-booster').remove();
+        // this is the only easy way to bypass CSP. But the tampermonkey can only addElement
         GM_addElement(layout, 'iframe', {
           id: 'issue-booster',
           src: issueUrl,
-          style: 'flex-basis: 40%;',
+          style:
+            // make issue panel sticky
+            'width: 100%; height: 100vh; position: sticky; align-self: flex-start; top: 0; flex: 0 0 40%;',
         });
       });
     });

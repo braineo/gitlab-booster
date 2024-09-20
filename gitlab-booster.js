@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         gitlab booster
 // @namespace    http://tampermonkey.net/
-// @version      2024-09-20
+// @version      1.0.0
 // @description  Boost productivity for code reviewers on gitlab
 // @author       braineo
 // @match        https://gitlab.com/*
@@ -71,6 +71,47 @@
         ),
       )
       .prependTo(element);
+  }
+
+  function ensurePanelLayout() {
+    // ensure two column scroll structure
+    const layout = document.querySelector('div.layout-page');
+    $(layout).css({ display: 'flex', height: '100vh', overflow: 'hidden' });
+
+    const content = document.querySelector('div.content-wrapper');
+    $(content).css({ overflowY: 'scroll' });
+  }
+
+  function ensureSidePanel(panelName, url) {
+    const buttonId = `close-${panelName.toLowerCase().replaceAll(' ', '-')}`;
+
+    if (!document.querySelector(`#${buttonId}`)) {
+      const topBar = document.querySelector('.top-bar-container');
+
+      $(topBar).append(
+        $('<button/>', {
+          id: buttonId,
+          class:
+            'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
+        }).append($('<span/>').text(`Close ${panelName}`)),
+      );
+
+      $(`#${buttonId}`).on('click', function () {
+        $('#issue-booster').remove();
+        $(`#${buttonId}`).remove();
+      });
+    }
+
+    const layout = document.querySelector('div.layout-page');
+    $('#issue-booster').remove();
+    // this is the only easy way to bypass CSP. But the tampermonkey can only addElement
+    GM_addElement(layout, 'iframe', {
+      id: 'issue-booster',
+      src: url,
+      style:
+        // make issue panel sticky
+        'width: 100%; height: 100vh; position: sticky; align-self: flex-start; top: 0; flex: 0 0 40%;',
+    });
   }
 
   //
@@ -148,9 +189,11 @@
 
   // Function to enhance the merge request list with unresolved threads
   async function enhanceMergeRequestList() {
-    const mergeRequests = document.querySelectorAll('.merge-request'); // Change this selector according to GitLab's MR structure
+    const mergeRequests = document.querySelectorAll('.merge-request');
 
-    for (let mergeRequest of mergeRequests) {
+    ensurePanelLayout();
+
+    for (const mergeRequest of mergeRequests) {
       const mergeRequestUrl = mergeRequest.querySelector(
         '.merge-request-title-text a',
       ).href;
@@ -161,6 +204,10 @@
 
       await addMergeRequestThreadMeta(metaList, mergeRequestUrl);
       await addMergeRequestDiffMeta(metaList, mergeRequestUrl);
+
+      $(mergeRequest).on('click', function () {
+        ensureSidePanel('MR Panel', mergeRequestUrl);
+      });
     }
   }
 
@@ -171,6 +218,8 @@
       // no related merge requests
       return;
     }
+
+    ensurePanelLayout();
 
     // select related items and exclude related issue
     // need to wait for the list to show up as the issue page loads first then loads the related merge request asynchronously
@@ -185,6 +234,14 @@
 
           const statusSvg = mergeRequest.querySelector('.item-title svg');
           const mergeRequestStatus = statusSvg.getAttribute('aria-label');
+
+          const mergeRequestUrl =
+            mergeRequest.querySelector('.item-title a').href;
+
+          $(mergeRequest).on('click', function () {
+            ensureSidePanel('MR Panel', mergeRequestUrl);
+          });
+
           switch (mergeRequestStatus) {
             case 'opened': {
               $(mergeRequest).css({ 'background-color': '#f9eeda' });
@@ -204,9 +261,6 @@
               return;
             }
           }
-
-          const mergeRequestUrl =
-            mergeRequest.querySelector('.item-title a').href;
 
           const diffsMeta = await fetchGitLabData(
             `${mergeRequestUrl}/diffs_metadata.json`,
@@ -228,42 +282,13 @@
   }
 
   function enhanceIssueList() {
-    const layout = document.querySelector('div.layout-page');
-    $(layout).css({ display: 'flex', height: '100vh', overflow: 'hidden'});
-
-    const content = document.querySelector('div.content-wrapper');
-    $(content).css({overflowY: 'scroll'});
-
+    ensurePanelLayout();
 
     waitForKeyElements('ul.issues-list > li', function (issue) {
       const issueUrl = issue.querySelector('a').href;
 
       $(issue).on('click', function () {
-        if (!document.querySelector('#close-iframe-button')) {
-          const topBar = document.querySelector('.top-bar-container');
-          $(topBar).append(
-            $('<button/>', {
-              id: 'close-iframe-button',
-              class:
-                'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
-            }).append($('<span/>').text('Close Issue Panel')),
-          );
-
-          $('#close-iframe-button').on('click', function () {
-            $('#issue-booster').remove();
-            $('#close-iframe-button').remove();
-          });
-        }
-
-        $('#issue-booster').remove();
-        // this is the only easy way to bypass CSP. But the tampermonkey can only addElement
-        GM_addElement(layout, 'iframe', {
-          id: 'issue-booster',
-          src: issueUrl,
-          style:
-            // make issue panel sticky
-            'width: 100%; height: 100vh; position: sticky; align-self: flex-start; top: 0; flex: 0 0 40%;',
-        });
+        ensureSidePanel('Issue Panel', issueUrl);
       });
     });
   }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         gitlab booster
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Boost productivity for code reviewers on gitlab
 // @author       braineo
 // @match        https://gitlab.com/*
@@ -10,6 +10,7 @@
 // @require      https://code.jquery.com/jquery-3.7.1.min.js
 // @license      AGPL-3.0-or-later
 // @grant        GM_addElement
+// @grant        window.onurlchange
 // ==/UserScript==
 
 /* global $ waitForKeyElements */
@@ -303,8 +304,7 @@
 
   const issueListRegex = /\/issues(?!\/\d+)/;
 
-  // Run the script when the DOM is fully loaded
-  window.onload = function () {
+  const enhance = function () {
     if (mergeRequestListRegex.test(window.location.href)) {
       enhanceMergeRequestList();
     }
@@ -316,5 +316,9 @@
     if (issueListRegex.test(window.location.href)) {
       enhanceIssueList();
     }
-  };
+  }
+  // Run the script when the DOM is fully loaded
+  window.onload = enhance;
+  // Run the script when the URL is changed
+  window.onurlchange = enhance;
 })();

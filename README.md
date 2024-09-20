@@ -15,9 +15,9 @@ https://greasyfork.org/en/scripts/509169-gitlab-booster
 This is a tampermonkey script, you can also copy and paste into your tampermonkey to enable it.
 
 
-### self-hosted gitlab instances
+### Self-hosted GitLab instances
 
-if you are using tampermonkey. In the settings of the installed script. Add your site in the `User matches`
+If you are using tampermonkey. In the settings of the installed script. Add your site in the `User matches`
 
 Or add additional match rules in the user script header section.
 
@@ -34,4 +34,4 @@ Or add additional match rules in the user script header section.
 
 ## Credit
 
-Thanks for the awesome work in this chrome extension https://github.com/Krystofee/gitlab-unresolved-threads, I adpoted the unresolved threads to a user script and added other features.
+Thanks for the awesome work in this chrome extension https://github.com/Krystofee/gitlab-unresolved-threads, I adopted the unresolved threads to a user script and added other features.

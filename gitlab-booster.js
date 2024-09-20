@@ -1,14 +1,15 @@
 // ==UserScript==
 // @name         gitlab booster
 // @namespace    http://tampermonkey.net/
-// @version      2024-08-15
+// @version      2024-09-20
 // @description  Boost productivity for code reviewers on gitlab
 // @author       braineo
 // @match        https://gitlab.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=gitlab.com
 // @require      https://cdn.jsdelivr.net/gh/CoeJoder/waitForKeyElements.js@16f3c035e2c41f8af0437a1eca1c9899e722ec37/waitForKeyElements.js
 // @require      https://code.jquery.com/jquery-3.7.1.min.js
-// @grant        none
+// @license      AGPL-3.0-or-later
+// @grant        GM_addElement
 // ==/UserScript==
 
 /* global $ waitForKeyElements */
@@ -226,6 +227,47 @@
     );
   }
 
+  function enhanceIssueList() {
+    const layout = document.querySelector('div.layout-page');
+    $(layout).css({ display: 'flex', height: '100vh', overflow: 'hidden'});
+
+    const content = document.querySelector('div.content-wrapper');
+    $(content).css({overflowY: 'scroll'});
+
+
+    waitForKeyElements('ul.issues-list > li', function (issue) {
+      const issueUrl = issue.querySelector('a').href;
+
+      $(issue).on('click', function () {
+        if (!document.querySelector('#close-iframe-button')) {
+          const topBar = document.querySelector('.top-bar-container');
+          $(topBar).append(
+            $('<button/>', {
+              id: 'close-iframe-button',
+              class:
+                'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
+            }).append($('<span/>').text('Close Issue Panel')),
+          );
+
+          $('#close-iframe-button').on('click', function () {
+            $('#issue-booster').remove();
+            $('#close-iframe-button').remove();
+          });
+        }
+
+        $('#issue-booster').remove();
+        // this is the only easy way to bypass CSP. But the tampermonkey can only addElement
+        GM_addElement(layout, 'iframe', {
+          id: 'issue-booster',
+          src: issueUrl,
+          style:
+            // make issue panel sticky
+            'width: 100%; height: 100vh; position: sticky; align-self: flex-start; top: 0; flex: 0 0 40%;',
+        });
+      });
+    });
+  }
+
   //
   // Entry point
   //
@@ -233,6 +275,8 @@
   const issueDetailRegex = /\/issues\/\d+/;
 
   const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
+
+  const issueListRegex = /\/issues(?!\/\d+)/;
 
   // Run the script when the DOM is fully loaded
   window.onload = function () {
@@ -242,6 +286,10 @@
 
     if (issueDetailRegex.test(window.location.href)) {
       enhanceIssueDetailPage();
+    }
+
+    if (issueListRegex.test(window.location.href)) {
+      enhanceIssueList();
     }
   };
 })();

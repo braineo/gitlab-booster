@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         gitlab booster
 // @namespace    http://tampermonkey.net/
-// @version      2024-09-20
+// @version      1.0.0
 // @description  Boost productivity for code reviewers on gitlab
 // @author       braineo
 // @match        https://gitlab.com/*

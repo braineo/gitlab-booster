@@ -229,7 +229,11 @@
 
   function enhanceIssueList() {
     const layout = document.querySelector('div.layout-page');
-    $(layout).css({ display: 'flex' });
+    $(layout).css({ display: 'flex', height: '100vh', overflow: 'hidden'});
+
+    const content = document.querySelector('div.content-wrapper');
+    $(content).css({overflowY: 'scroll'});
+
 
     waitForKeyElements('ul.issues-list > li', function (issue) {
       const issueUrl = issue.querySelector('a').href;

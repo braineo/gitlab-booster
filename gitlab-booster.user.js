@@ -48,7 +48,7 @@
   }
 
   function createDiffStat(element, fileCount, addLineCount, deleteLinCount) {
-    const diffContent = $('<div/>')
+    $('<div/>')
       .css({ display: 'flex', 'flex-direction': 'row', gap: '3px' })
       .append(
         $('<div/>', { class: 'diff-stats-group' }).append(
@@ -316,7 +316,7 @@
     if (issueListRegex.test(window.location.href)) {
       enhanceIssueList();
     }
-  }
+  };
   // Run the script when the DOM is fully loaded
   window.onload = enhance;
   // Run the script when the URL is changed

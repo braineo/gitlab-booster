@@ -249,7 +249,7 @@
               break;
             }
             case 'merged': {
-              return;
+              break;
             }
 
             case 'closed': {
@@ -271,9 +271,11 @@
             '.item-meta .item-attributes-area',
           );
 
-          await addMergeRequestThreadMeta(metaDiv, mergeRequestUrl);
+          if (mergeRequestStatus === 'opened') {
+            await addMergeRequestThreadMeta(metaDiv, mergeRequestUrl);
 
-          await addMergeRequestDiffMeta(metaDiv, mergeRequestUrl);
+            await addMergeRequestDiffMeta(metaDiv, mergeRequestUrl);
+          }
 
           $('<span/>').text(diffsMeta.project_path).prependTo(metaDiv);
         })();

@@ -212,6 +212,30 @@
     }
   }
 
+  // Function to enhance the merge request page
+  async function enhanceMergeRequest() {
+    if (/\/merge_requests(\/\d+)\/diffs/.test(window.location.href)
+      && !$('[data-testid=breadcrumb-links] progress').length) {
+      const storageEvent = new Event("gitlab-booster-storageChanged");
+      const originalSetItem = localStorage.setItem;
+      localStorage.setItem = function(){
+        originalSetItem.apply(this, arguments);
+        document.dispatchEvent(storageEvent);
+      };
+      const path = location.pathname;
+      const key = location.pathname.replace(/\/diffs$/, '-file-reviews')
+      const totalDiffs = $('[data-testid=file-count]').text().trim();
+      const progress = $('<progress>').attr('max', '1');
+      $('[data-testid=breadcrumb-links]').append(progress);
+      const updateProgress = () => {
+        const reviewed = JSON.parse(localStorage.getItem(key) ?? '{}');
+        progress.attr('value', Object.keys(reviewed).length / totalDiffs);
+      };
+      updateProgress();
+      document.addEventListener("gitlab-booster-storageChanged", updateProgress);
+    }
+  }
+
   // Function to enhance the issue detail page with related project names of merge requests
   async function enhanceIssueDetailPage() {
     const title = $('#related-merge-requests')[0];
@@ -304,11 +328,17 @@
 
   const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
 
+  const mergeRequestRegex = /\/merge_requests(\/\d+)/;
+
   const issueListRegex = /\/issues(?!\/\d+)/;
 
   const enhance = function () {
     if (mergeRequestListRegex.test(window.location.href)) {
       enhanceMergeRequestList();
+    }
+
+    if (mergeRequestRegex.test(window.location.href)) {
+      enhanceMergeRequest();
     }
 
     if (issueDetailRegex.test(window.location.href)) {

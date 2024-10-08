@@ -222,7 +222,6 @@
         originalSetItem.apply(this, arguments);
         document.dispatchEvent(storageEvent);
       };
-      const path = location.pathname;
       const key = location.pathname.replace(/\/diffs$/, '-file-reviews')
       const totalDiffs = $('[data-testid=file-count]').text().trim();
       const progress = $('<progress>').attr('max', '1');

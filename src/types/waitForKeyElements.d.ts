@@ -23,8 +23,8 @@
  * @param {number}            [maxIntervals=-1]  - The max number of intervals to run (negative number for unlimited).
  */
 declare function waitForKeyElements(
-  selectorOrFunction: string | Function,
-  callback: Function,
+  selectorOrFunction: string | (() => HTMLElement),
+  callback: (HTMLElement) => void,
   waitOnce?: boolean,
   interval?: number,
   maxIntervals?: number,

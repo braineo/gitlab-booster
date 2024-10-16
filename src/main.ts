@@ -1,5 +1,3 @@
-// @ts-ignore isolatedModules
-
 interface DiffsMeta {
   diff_files: Array<{
     new_path: string;
@@ -101,7 +99,7 @@ function ensureSidePanel(panelName: string, url: string) {
       }).append($('<span/>').text(`Close ${panelName}`)),
     );
 
-    $(`#${buttonId}`).on('click', function () {
+    $(`#${buttonId}`).on('click', () => {
       $('#issue-booster').remove();
       $(`#${buttonId}`).remove();
     });
@@ -221,7 +219,7 @@ async function enhanceMergeRequestList() {
     await addMergeRequestThreadMeta(metaList, mergeRequestUrl);
     await addMergeRequestDiffMeta(metaList, mergeRequestUrl);
 
-    $(mergeRequest).on('click', function () {
+    $(mergeRequest).on('click', () => {
       ensureSidePanel('MR Panel', mergeRequestUrl);
     });
   }
@@ -241,8 +239,8 @@ async function enhanceIssueDetailPage() {
   // need to wait for the list to show up as the issue page loads first then loads the related merge request asynchronously
   waitForKeyElements(
     '.issue-details.issuable-details.js-issue-details div.js-issue-widgets .related-items-list li:not(.js-related-issues-token-list-item)',
-    function (mergeRequest: HTMLElement) {
-      (async function () {
+    (mergeRequest: HTMLElement) => {
+      (async () => {
         console.debug(
           'inserting merge request meta to related merge requests',
           mergeRequest,
@@ -261,7 +259,7 @@ async function enhanceIssueDetailPage() {
           return;
         }
 
-        $(mergeRequest).on('click', function () {
+        $(mergeRequest).on('click', () => {
           ensureSidePanel('MR Panel', mergeRequestUrl);
         });
 
@@ -313,14 +311,14 @@ async function enhanceIssueDetailPage() {
 function enhanceIssueList() {
   ensurePanelLayout();
 
-  waitForKeyElements('ul.issues-list > li', function (issue: HTMLElement) {
+  waitForKeyElements('ul.issues-list > li', (issue: HTMLElement) => {
     const issueUrl = issue.querySelector<HTMLAnchorElement>('a')?.href;
 
     if (!issueUrl) {
       return;
     }
 
-    $(issue).on('click', function () {
+    $(issue).on('click', () => {
       ensureSidePanel('Issue Panel', issueUrl);
     });
   });
@@ -336,7 +334,7 @@ const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
 
 const issueListRegex = /\/issues(?!\/\d+)/;
 
-const enhance = function () {
+const enhance = () => {
   if (mergeRequestListRegex.test(window.location.href)) {
     enhanceMergeRequestList();
   }

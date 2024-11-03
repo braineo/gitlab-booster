@@ -1,4 +1,9 @@
+import { GM_addElement } from '$';
+import $ from 'jquery';
+import { waitForKeyElements } from './waitForKeyElements';
+
 interface DiffsMeta {
+  project_path: string;
   diff_files: Array<{
     new_path: string;
     added_lines: number;
@@ -6,7 +11,12 @@ interface DiffsMeta {
   }>;
 }
 
-async function fetchGitLabData(url: string) {
+interface MergeRequestDiscussion {
+  resolved: boolean;
+  resolvable: boolean;
+}
+
+async function fetchGitLabData<T>(url: string): Promise<T | null> {
   const response = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
   });
@@ -114,6 +124,7 @@ function ensureSidePanel(panelName: string, url: string) {
   GM_addElement(layout, 'iframe', {
     id: 'issue-booster',
     src: url,
+    // @ts-ignore // typing says style is readonly
     style:
       // make issue panel sticky
       'width: 100%; height: 100vh; position: sticky; align-self: flex-start; top: 0; flex: 0 0 40%;',
@@ -129,9 +140,11 @@ async function addMergeRequestThreadMeta(
   mergeRequestUrl: string,
 ) {
   // Fetch unresolved threads from GitLab API
-  const discussions = await fetchGitLabData(
-    `${mergeRequestUrl}/discussions.json`,
-  );
+  const discussions =
+    (await fetchGitLabData<MergeRequestDiscussion[]>(
+      `${mergeRequestUrl}/discussions.json`,
+    )) ?? [];
+
   let resolvable = 0;
   let resolved = 0;
 
@@ -155,9 +168,13 @@ async function addMergeRequestDiffMeta(
   element: HTMLElement,
   mergeRequestUrl: string,
 ) {
-  const diffsMeta = await fetchGitLabData(
+  const diffsMeta = await fetchGitLabData<DiffsMeta>(
     `${mergeRequestUrl}/diffs_metadata.json`,
   );
+
+  if (!diffsMeta) {
+    return;
+  }
 
   const { addedLineCount, deleteLinCount, fileCount } =
     dehydrateDiff(diffsMeta);
@@ -239,7 +256,7 @@ async function enhanceIssueDetailPage() {
   // need to wait for the list to show up as the issue page loads first then loads the related merge request asynchronously
   waitForKeyElements(
     '.issue-details.issuable-details.js-issue-details div.js-issue-widgets .related-items-list li:not(.js-related-issues-token-list-item)',
-    (mergeRequest: HTMLElement) => {
+    (mergeRequest: Element) => {
       (async () => {
         console.debug(
           'inserting merge request meta to related merge requests',
@@ -283,9 +300,13 @@ async function enhanceIssueDetailPage() {
           }
         }
 
-        const diffsMeta = await fetchGitLabData(
+        const diffsMeta = await fetchGitLabData<DiffsMeta>(
           `${mergeRequestUrl}/diffs_metadata.json`,
         );
+
+        if (!diffsMeta) {
+          return;
+        }
 
         const metaDiv = mergeRequest.querySelector<HTMLElement>(
           '.item-meta .item-attributes-area',
@@ -311,10 +332,11 @@ async function enhanceIssueDetailPage() {
 function enhanceIssueList() {
   ensurePanelLayout();
 
-  waitForKeyElements('ul.issues-list > li', (issue: HTMLElement) => {
+  waitForKeyElements('ul.issues-list > li', (issue: Element) => {
     const issueUrl = issue.querySelector<HTMLAnchorElement>('a')?.href;
 
     if (!issueUrl) {
+      console.error('cannot find url for issue');
       return;
     }
 

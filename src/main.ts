@@ -343,6 +343,8 @@ function enhanceIssueList() {
     $(issue).on('click', () => {
       ensureSidePanel('Issue Panel', issueUrl);
     });
+    // keep watching this DOM because gitlab reuse this list element
+    return true;
   });
 }
 
@@ -356,6 +358,8 @@ const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
 
 const issueListRegex = /\/issues(?!\/\d+)/;
 
+const epicListRegex = /\/issues(?!\/\d+)/;
+
 const enhance = () => {
   if (mergeRequestListRegex.test(window.location.href)) {
     enhanceMergeRequestList();
@@ -366,6 +370,11 @@ const enhance = () => {
   }
 
   if (issueListRegex.test(window.location.href)) {
+    enhanceIssueList();
+  }
+
+  if (epicListRegex.test(window.location.href)) {
+    // it is the same style
     enhanceIssueList();
   }
 };

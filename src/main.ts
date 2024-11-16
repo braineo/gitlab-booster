@@ -2,6 +2,15 @@ import { GM_addElement } from '$';
 import $ from 'jquery';
 import { waitForKeyElements } from './waitForKeyElements';
 
+GM_addElement('link', {
+  rel: 'stylesheet',
+  href: 'https://cdn.jsdelivr.net/npm/nf-sauce-code-pro@2.1.3/nf-font.min.css',
+});
+
+//
+// Types
+//
+
 interface DiffsMeta {
   project_path: string;
   diff_files: Array<{
@@ -15,6 +24,20 @@ interface MergeRequestDiscussion {
   resolved: boolean;
   resolvable: boolean;
 }
+
+interface Issue {
+  iid: number;
+  project_id: number;
+}
+
+interface MergeRequest {
+  state: string;
+}
+
+// although @gitbeaker/rest is convenient, but the bundle size is huge
+const getApiUrl = (url: string): string => {
+  return `${window.location.origin}/api/v4${url}`;
+};
 
 async function fetchGitLabData<T>(url: string): Promise<T | null> {
   const response = await fetch(url, {
@@ -76,6 +99,34 @@ function createDiffStat(
       }).append($('<span/>').text('-'), $('<span/>').text(`${deleteLinCount}`)),
     )
     .prependTo(element);
+}
+
+function createIssueCardMergeRequestInfo(
+  element: HTMLElement,
+  opened: number,
+  total: number,
+) {
+  const inline = $('<span/>').appendTo(element);
+
+  $('<div/>', {
+    class:
+      'issue-milestone-details gl-flex gl-max-w-15 gl-gap-2 gl-mr-3 gl-inline-flex gl-max-w-15 gl-cursor-help gl-items-center gl-align-bottom gl-text-sm gl-text-gray-500',
+  })
+    .append(
+      $('<span/>', {
+        title: 'Merge requests',
+      })
+        .css({
+          'font-family': 'SauceCodePro Mono',
+          'font-size': '1.1rem',
+        })
+        .text('\ue726'),
+
+      $('<span/>', {
+        class: 'gl-inline-block gl-truncate gl-font-bold',
+      }).text(total === 0 ? '-/-' : `${total - opened}/${total}`),
+    )
+    .appendTo(inline);
 }
 
 function ensurePanelLayout() {
@@ -348,6 +399,69 @@ function enhanceIssueList() {
   });
 }
 
+const enhanceIssueCard: MutationCallback = async (
+  mutationList: MutationRecord[],
+) => {
+  for (const mutation of mutationList) {
+    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+      for (const node of mutation.addedNodes) {
+        if (node instanceof Element && node.matches('li.board-card')) {
+          const issueUrl = node.querySelector<HTMLAnchorElement>(
+            'h4.board-card-title > a',
+          )?.href;
+
+          const infoItems = node.querySelector<HTMLElement>(
+            'span.board-info-items',
+          );
+
+          if (!issueUrl || !infoItems) {
+            continue;
+          }
+
+          const issue = await fetchGitLabData<Issue>(`${issueUrl}.json`);
+          if (!issue) {
+            continue;
+          }
+
+          const relatedMergeRequest =
+            (await fetchGitLabData<MergeRequest[]>(
+              getApiUrl(
+                `/projects/${issue.project_id}/issues/${issue.iid}/related_merge_requests`,
+              ),
+            )) ?? [];
+
+          const total = relatedMergeRequest.length;
+
+          const opened = relatedMergeRequest.filter(
+            mergeRequest => mergeRequest.state === 'opened',
+          ).length;
+
+          createIssueCardMergeRequestInfo(infoItems, opened, total);
+        }
+      }
+    } else if (mutation.type === 'attributes') {
+    }
+  }
+  return;
+};
+
+const observer = new MutationObserver(enhanceIssueCard);
+
+const enhanceIssueBoard = () => {
+  observer.disconnect();
+
+  const boardElement = document.querySelector('.boards-list');
+  if (!boardElement) {
+    return;
+  }
+
+  observer.observe(boardElement, {
+    attributes: false,
+    childList: true,
+    subtree: true,
+  });
+};
+
 //
 // Entry point
 //
@@ -358,7 +472,9 @@ const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
 
 const issueListRegex = /\/issues(?!\/\d+)/;
 
-const epicListRegex = /\/issues(?!\/\d+)/;
+const epicListRegex = /\/epics(?!\/\d+)/;
+
+const issueBoardRegex = /\/boards\/\d+/;
 
 const enhance = () => {
   if (mergeRequestListRegex.test(window.location.href)) {
@@ -374,8 +490,12 @@ const enhance = () => {
   }
 
   if (epicListRegex.test(window.location.href)) {
-    // it is the same style
+    // epic list has the same style with issue list.
     enhanceIssueList();
+  }
+
+  if (issueBoardRegex.test(window.location.href)) {
+    enhanceIssueBoard();
   }
 };
 // Run the script when the DOM is fully loaded

@@ -433,7 +433,7 @@ const enhanceIssueCard: MutationCallback = async (
           const total = relatedMergeRequest.length;
 
           const opened = relatedMergeRequest.filter(
-            mergeRequest => mergeRequest.state === 'opened',
+            (mergeRequest) => mergeRequest.state === 'opened',
           ).length;
 
           createIssueCardMergeRequestInfo(infoItems, opened, total);

@@ -1,22 +1,22 @@
 {
   "name": "gitlab-booster",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Boost productivity for code reviewers on gitlab",
   "main": "gitlab-booster.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint && biome lint --error-on-warnings ./src",
+    "format": "biome format --write ."
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/braineo/gitlab-booster.git"
   },
-  "keywords": [
-    "tampermonkey",
-    "extension",
-    "gitlab",
-    "git"
-  ],
+  "keywords": ["tampermonkey", "extension", "gitlab", "git"],
   "author": "",
   "license": "AGPL-3.0-or-later",
   "bugs": {
@@ -24,9 +24,18 @@
   },
   "homepage": "https://github.com/braineo/gitlab-booster#readme",
   "devDependencies": {
+    "@biomejs/biome": "1.9.3",
     "@eslint/js": "^9.11.1",
+    "@types/jquery": "^3.5.31",
+    "@types/tampermonkey": "^5.0.3",
     "eslint": "^9.11.1",
     "eslint-plugin-userscripts": "^0.5.5",
-    "globals": "^15.9.0"
+    "globals": "^15.9.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.12",
+    "vite-plugin-monkey": "^4.0.0"
+  },
+  "dependencies": {
+    "jquery": "^3.7.1"
   }
 }

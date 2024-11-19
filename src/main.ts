@@ -20,9 +20,15 @@ interface DiffsMeta {
   }>;
 }
 
+interface DiscussionNote {
+  type: null | 'LabelNote' | 'DiscussionNote';
+  author: User;
+}
+
 interface MergeRequestDiscussion {
   resolved: boolean;
   resolvable: boolean;
+  notes: DiscussionNote[];
 }
 
 interface Issue {
@@ -30,9 +36,28 @@ interface Issue {
   project_id: number;
 }
 
-interface MergeRequest {
-  state: string;
+interface MergeRequestListItem {
+  iid: number;
+  target_project_full_path: string;
 }
+
+interface MergeRequest {
+  project_id: number;
+  author: User;
+  state: string;
+  assignees: User[];
+  reviewers: User[];
+}
+
+interface User {
+  id: number;
+  username: string;
+  name: string;
+}
+
+//
+// API
+//
 
 // although @gitbeaker/rest is convenient, but the bundle size is huge
 const getApiUrl = (url: string): string => {
@@ -49,6 +74,8 @@ async function fetchGitLabData<T>(url: string): Promise<T | null> {
   }
   return await response.json();
 }
+
+let currentUser: User | null;
 
 //
 // Element manipulation
@@ -225,6 +252,10 @@ const openModal = (url: string) => {
 // Data process
 //
 
+const getUser = async () => {
+  return fetchGitLabData<User>(getApiUrl('/user'));
+};
+
 async function addMergeRequestThreadMeta(
   element: HTMLElement,
   mergeRequestUrl: string,
@@ -251,6 +282,39 @@ async function addMergeRequestThreadMeta(
     createThreadsBadge(element, 'danger', resolved, resolvable);
   } else if (resolved === resolvable && resolvable > 0) {
     createThreadsBadge(element, 'success', resolved, resolvable);
+  }
+
+  const listItem = await fetchGitLabData<MergeRequestListItem>(
+    `${mergeRequestUrl}.json`,
+  );
+
+  if (!currentUser) {
+    currentUser = await getUser();
+  }
+
+  const userId = currentUser?.id;
+
+  if (listItem && userId) {
+    const mergeRequest = await fetchGitLabData<MergeRequest>(
+      getApiUrl(
+        `/projects/${encodeURIComponent(listItem.target_project_full_path)}/merge_requests/${listItem.iid}`,
+      ),
+    );
+
+    if (mergeRequest) {
+      console.log(mergeRequest.author.id, userId);
+
+      console.log(
+        mergeRequest.assignees.map(a => a.id),
+        mergeRequest.reviewers.map(a => a.id),
+      );
+
+      console.log(
+        discussions.filter(
+          d => d.notes[0].author.id === userId && d.resolvable && !d.resolved,
+        ),
+      );
+    }
   }
 }
 
@@ -323,8 +387,8 @@ async function enhanceMergeRequestList() {
 
     const metaList = $(mergeRequest).find('.issuable-meta ul, ul.controls')[0];
 
-    await addMergeRequestThreadMeta(metaList, mergeRequestUrl);
-    await addMergeRequestDiffMeta(metaList, mergeRequestUrl);
+    addMergeRequestThreadMeta(metaList, mergeRequestUrl);
+    addMergeRequestDiffMeta(metaList, mergeRequestUrl);
 
     $(mergeRequest).on('click', () => {
       ensureSidePanel('MR Panel', mergeRequestUrl);
@@ -472,7 +536,7 @@ const enhanceIssueCard: MutationCallback = async (
           const total = relatedMergeRequest.length;
 
           const opened = relatedMergeRequest.filter(
-            (mergeRequest) => mergeRequest.state === 'opened',
+            mergeRequest => mergeRequest.state === 'opened',
           ).length;
 
           createIssueCardMergeRequestInfo(infoItems, opened, total);

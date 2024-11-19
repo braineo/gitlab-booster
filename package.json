@@ -16,12 +16,7 @@
     "type": "git",
     "url": "git+https://github.com/braineo/gitlab-booster.git"
   },
-  "keywords": [
-    "tampermonkey",
-    "extension",
-    "gitlab",
-    "git"
-  ],
+  "keywords": ["tampermonkey", "extension", "gitlab", "git"],
   "author": "",
   "license": "AGPL-3.0-or-later",
   "bugs": {

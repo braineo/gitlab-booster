@@ -182,6 +182,45 @@ function ensureSidePanel(panelName: string, url: string) {
   });
 }
 
+const openModal = (url: string) => {
+  const modal = $('#gitlab-booster-modal');
+
+  if (modal) {
+    modal.remove();
+  }
+
+  const modalContent = $('<div/>', { class: 'modal-content' }).append(
+    $('<header/>', { class: 'modal-header' }).append(
+      $('<h2/>', { textContent: 'Quick preview' }),
+      $('<button/>', {
+        class:
+          'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
+      })
+        .append($('<span/>').text('Close Modal'))
+        .on('click', () => {
+          document.querySelector('#gitlab-booster-modal')?.remove();
+        }),
+    ),
+  );
+
+  $('<div/>', {
+    id: 'gitlab-booster-modal',
+    class: 'modal fade show d-block gl-modal',
+  })
+    .append(
+      $('<div/>', { class: 'modal-dialog modal-lg' }).append(modalContent),
+    )
+    .appendTo($('body'));
+
+  const iframe = GM_addElement(modalContent[0], 'iframe', {
+    id: 'issue-booster',
+    src: url,
+  });
+
+  iframe.className = 'modal-body';
+  iframe.setAttribute('style', 'height: 80vh;');
+};
+
 //
 // Data process
 //
@@ -437,6 +476,8 @@ const enhanceIssueCard: MutationCallback = async (
           ).length;
 
           createIssueCardMergeRequestInfo(infoItems, opened, total);
+
+          node.addEventListener('click', () => openModal(issueUrl));
         }
       }
     } else if (mutation.type === 'attributes') {

@@ -319,6 +319,7 @@ async function addMergeRequestThreadMeta(
             !discusstion.resolved &&
             discusstion.notes.length > 0
           ) {
+            // biome-ignore lint: cannot be empty
             if (discusstion.notes.at(-1)!.author.id === userId) {
               needOtherReplyThread += 1;
             } else {
@@ -347,8 +348,10 @@ async function addMergeRequestThreadMeta(
             !discusstion.resolved &&
             discusstion.notes.length > 0
           ) {
+            // biome-ignore lint: cannot be empty
             if (discusstion.notes.at(0)!.author.id === userId) {
               needUserReview = false;
+              // biome-ignore lint: cannot be empty
               if (discusstion.notes.at(-1)!.author.id === userId) {
                 needOtherReplyThread += 1;
               } else {

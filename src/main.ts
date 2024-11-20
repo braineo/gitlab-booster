@@ -42,6 +42,7 @@ interface MergeRequestListItem {
 }
 
 interface MergeRequest {
+  title: string;
   project_id: number;
   author: User;
   state: string;
@@ -302,18 +303,75 @@ async function addMergeRequestThreadMeta(
     );
 
     if (mergeRequest) {
-      console.log(mergeRequest.author.id, userId);
+      const isUserAuthor = mergeRequest.author.id === userId;
+      const isUserReviewer =
+        mergeRequest.assignees.some(user => user.id === userId) ||
+        mergeRequest.reviewers.some(user => user.id === userId);
 
-      console.log(
-        mergeRequest.assignees.map(a => a.id),
-        mergeRequest.reviewers.map(a => a.id),
-      );
+      if (isUserAuthor) {
+        // wait for others' response
+        let needOtherReplyThread = 0;
+        // need for my response
+        let needUserReplyThread = 0;
+        for (const discusstion of discussions) {
+          if (
+            discusstion.resolvable &&
+            !discusstion.resolved &&
+            discusstion.notes.length > 0
+          ) {
+            if (discusstion.notes.at(-1)!.author.id === userId) {
+              needOtherReplyThread += 1;
+            } else {
+              needUserReplyThread += 1;
+            }
+          }
+        }
 
-      console.log(
-        discussions.filter(
-          d => d.notes[0].author.id === userId && d.resolvable && !d.resolved,
-        ),
-      );
+        console.log(
+          mergeRequest.title,
+          needOtherReplyThread,
+          needUserReplyThread,
+        );
+      } else if (isUserReviewer) {
+        // thread wait for others' response
+        let needOtherReplyThread = 0;
+        // thread need my response
+        let needUserReplyThread = 0;
+        // thread started by someone else
+        let otherUnresolvedThread = 0;
+        let needUserReview = true;
+
+        for (const discusstion of discussions) {
+          if (
+            discusstion.resolvable &&
+            !discusstion.resolved &&
+            discusstion.notes.length > 0
+          ) {
+            if (discusstion.notes.at(0)!.author.id === userId) {
+              needUserReview = false;
+              if (discusstion.notes.at(-1)!.author.id === userId) {
+                needOtherReplyThread += 1;
+              } else {
+                needUserReplyThread += 1;
+              }
+            }
+          }
+          otherUnresolvedThread =
+            resolvable - resolved - needOtherReplyThread - needUserReplyThread;
+        }
+
+        // need my reviewed. any comment, upvote or approval
+        // wait for others' response to my thread
+        // wait for others' response to other thread
+        // need for my response
+        console.log(
+          mergeRequest.title,
+          needOtherReplyThread,
+          needUserReplyThread,
+          otherUnresolvedThread,
+          needUserReview,
+        );
+      }
     }
   }
 }

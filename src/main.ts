@@ -310,9 +310,9 @@ async function addMergeRequestThreadMeta(
 
       if (isUserAuthor) {
         // wait for others' response
-        let needOtherReplyThread = 0;
+        let waitForTheirsCount = 0;
         // need for my response
-        let needUserReplyThread = 0;
+        let waitForOursCount = 0;
         for (const discusstion of discussions) {
           if (
             discusstion.resolvable &&
@@ -321,25 +321,21 @@ async function addMergeRequestThreadMeta(
           ) {
             // biome-ignore lint: cannot be empty
             if (discusstion.notes.at(-1)!.author.id === userId) {
-              needOtherReplyThread += 1;
+              waitForTheirsCount += 1;
             } else {
-              needUserReplyThread += 1;
+              waitForOursCount += 1;
             }
           }
         }
 
-        console.log(
-          mergeRequest.title,
-          needOtherReplyThread,
-          needUserReplyThread,
-        );
+        console.log(mergeRequest.title, waitForTheirsCount, waitForOursCount);
       } else if (isUserReviewer) {
         // thread wait for others' response
-        let needOtherReplyThread = 0;
+        let waitForTheirsCount = 0;
         // thread need my response
-        let needUserReplyThread = 0;
+        let waitForOursCount = 0;
         // thread started by someone else
-        let otherUnresolvedThread = 0;
+        let otherUnresolvedCount = 0;
         let needUserReview = true;
 
         for (const discusstion of discussions) {
@@ -353,14 +349,14 @@ async function addMergeRequestThreadMeta(
               needUserReview = false;
               // biome-ignore lint: cannot be empty
               if (discusstion.notes.at(-1)!.author.id === userId) {
-                needOtherReplyThread += 1;
+                waitForTheirsCount += 1;
               } else {
-                needUserReplyThread += 1;
+                waitForOursCount += 1;
               }
             }
           }
-          otherUnresolvedThread =
-            resolvable - resolved - needOtherReplyThread - needUserReplyThread;
+          otherUnresolvedCount =
+            resolvable - resolved - waitForTheirsCount - waitForOursCount;
         }
 
         // need my reviewed. any comment, upvote or approval
@@ -369,9 +365,9 @@ async function addMergeRequestThreadMeta(
         // need for my response
         console.log(
           mergeRequest.title,
-          needOtherReplyThread,
-          needUserReplyThread,
-          otherUnresolvedThread,
+          waitForTheirsCount,
+          waitForOursCount,
+          otherUnresolvedCount,
           needUserReview,
         );
       }

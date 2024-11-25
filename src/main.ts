@@ -371,8 +371,6 @@ async function addMergeRequestThreadMeta(
     );
 
     if (mergeRequest) {
-      renderFallback = false;
-
       const action: MergeRequestThreadAction = {
         waitForOursCount: 0,
         waitForTheirsCount: 0,
@@ -386,6 +384,7 @@ async function addMergeRequestThreadMeta(
         mergeRequest.reviewers.some(user => user.id === userId);
 
       if (isUserAuthor) {
+        renderFallback = false;
         for (const discusstion of discussions) {
           if (
             discusstion.resolvable &&
@@ -403,6 +402,7 @@ async function addMergeRequestThreadMeta(
 
         createThreadActionBadges(element, action);
       } else if (isUserReviewer) {
+        renderFallback = false;
         action.needUserReview = true;
 
         for (const discusstion of discussions) {

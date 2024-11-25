@@ -20,9 +20,15 @@ interface DiffsMeta {
   }>;
 }
 
+interface DiscussionNote {
+  type: null | 'LabelNote' | 'DiscussionNote';
+  author: User;
+}
+
 interface MergeRequestDiscussion {
   resolved: boolean;
   resolvable: boolean;
+  notes: DiscussionNote[];
 }
 
 interface Issue {
@@ -30,9 +36,40 @@ interface Issue {
   project_id: number;
 }
 
-interface MergeRequest {
-  state: string;
+interface MergeRequestListItem {
+  iid: number;
+  target_project_full_path: string;
 }
+
+interface MergeRequest {
+  title: string;
+  project_id: number;
+  author: User;
+  state: string;
+  assignees: User[];
+  reviewers: User[];
+}
+
+interface User {
+  id: number;
+  username: string;
+  name: string;
+}
+
+interface MergeRequestThreadAction {
+  /** number of threads waiting for others reply to discussion started by us */
+  waitForTheirsCount: number;
+  /** number of threads waiting for us to reply or resolve */
+  waitForOursCount: number;
+  /** number of other open threads */
+  otherUnresolvedCount: number;
+  /** whether user has reviewed the merge request */
+  needUserReview: boolean;
+}
+
+//
+// API
+//
 
 // although @gitbeaker/rest is convenient, but the bundle size is huge
 const getApiUrl = (url: string): string => {
@@ -49,6 +86,8 @@ async function fetchGitLabData<T>(url: string): Promise<T | null> {
   }
   return await response.json();
 }
+
+let currentUser: User | null;
 
 //
 // Element manipulation
@@ -70,6 +109,64 @@ function createThreadsBadge(
     )
     .text(`${resolved}/${resolvable} threads resolved`)
     .prependTo(li);
+}
+
+function createThreadActionBadges(
+  element: HTMLElement,
+  action: MergeRequestThreadAction,
+) {
+  const li = $('<li/>')
+    .addClass('issuable-comments d-none d-sm-flex')
+    .prependTo(element);
+
+  const createIconText = (
+    icon: string,
+    title: string,
+    text?: string,
+    badgeClassName?: string,
+  ) => {
+    return $('<span/>', {
+      title,
+      class: `gl-badge badge badge-pill ${badgeClassName ? `badge-${badgeClassName}` : ''} sm has-tooltip`,
+    })
+      .css({
+        'font-family': 'SauceCodePro Mono',
+      })
+      .text(`${icon} ${text ?? ''}`);
+  };
+
+  if (action.waitForOursCount) {
+    createIconText(
+      '\uf063',
+      'need your response',
+      action.waitForOursCount.toString(),
+      'danger',
+    ).prependTo(li);
+  }
+
+  if (action.waitForTheirsCount) {
+    createIconText(
+      '\uf062',
+      'wait for response',
+      action.waitForTheirsCount.toString(),
+      'muted',
+    ).prependTo(li);
+  }
+
+  if (action.otherUnresolvedCount) {
+    createIconText(
+      '\uf0e5',
+      'other threads',
+      action.otherUnresolvedCount.toString(),
+      'warning',
+    ).prependTo(li);
+  }
+
+  if (action.needUserReview) {
+    createIconText('\uf256', 'need your review', undefined, 'danger').prependTo(
+      li,
+    );
+  }
 }
 
 function createDiffStat(
@@ -208,7 +305,9 @@ const openModal = (url: string) => {
     class: 'modal fade show d-block gl-modal',
   })
     .append(
-      $('<div/>', { class: 'modal-dialog modal-lg' }).append(modalContent),
+      $('<div/>', { class: 'modal-dialog modal-lg' })
+        .css({ 'max-width': '80vw' })
+        .append(modalContent),
     )
     .appendTo($('body'));
 
@@ -224,6 +323,10 @@ const openModal = (url: string) => {
 //
 // Data process
 //
+
+const getUser = async () => {
+  return fetchGitLabData<User>(getApiUrl('/user'));
+};
 
 async function addMergeRequestThreadMeta(
   element: HTMLElement,
@@ -245,6 +348,94 @@ async function addMergeRequestThreadMeta(
     if (discussion.resolved) {
       resolved += 1;
     }
+  }
+
+  const listItem = await fetchGitLabData<MergeRequestListItem>(
+    `${mergeRequestUrl}.json`,
+  );
+
+  if (!currentUser) {
+    currentUser = await getUser();
+  }
+
+  const userId = currentUser?.id;
+
+  // render simple badge if cannot get the user or the merge request detail from API
+  let renderFallback = true;
+
+  if (listItem && userId) {
+    const mergeRequest = await fetchGitLabData<MergeRequest>(
+      getApiUrl(
+        `/projects/${encodeURIComponent(listItem.target_project_full_path)}/merge_requests/${listItem.iid}`,
+      ),
+    );
+
+    if (mergeRequest) {
+      const action: MergeRequestThreadAction = {
+        waitForOursCount: 0,
+        waitForTheirsCount: 0,
+        otherUnresolvedCount: 0,
+        needUserReview: false,
+      };
+
+      const isUserAuthor = mergeRequest.author.id === userId;
+      const isUserReviewer =
+        mergeRequest.assignees.some(user => user.id === userId) ||
+        mergeRequest.reviewers.some(user => user.id === userId);
+
+      if (isUserAuthor) {
+        renderFallback = false;
+        for (const discusstion of discussions) {
+          if (
+            discusstion.resolvable &&
+            !discusstion.resolved &&
+            discusstion.notes.length > 0
+          ) {
+            // biome-ignore lint: cannot be empty
+            if (discusstion.notes.at(-1)!.author.id === userId) {
+              action.waitForTheirsCount += 1;
+            } else {
+              action.waitForOursCount += 1;
+            }
+          }
+        }
+
+        createThreadActionBadges(element, action);
+      } else if (isUserReviewer) {
+        renderFallback = false;
+        action.needUserReview = true;
+
+        for (const discusstion of discussions) {
+          if (
+            discusstion.resolvable &&
+            !discusstion.resolved &&
+            discusstion.notes.length > 0
+          ) {
+            // biome-ignore lint: cannot be empty
+            if (discusstion.notes.at(0)!.author.id === userId) {
+              action.needUserReview = false;
+              // biome-ignore lint: cannot be empty
+              if (discusstion.notes.at(-1)!.author.id === userId) {
+                action.waitForTheirsCount += 1;
+              } else {
+                action.waitForOursCount += 1;
+              }
+            }
+          }
+          action.otherUnresolvedCount =
+            resolvable -
+            resolved -
+            action.waitForTheirsCount -
+            action.waitForOursCount;
+        }
+
+        createThreadActionBadges(element, action);
+      }
+    }
+  }
+
+  if (!renderFallback) {
+    return;
   }
 
   if (resolvable > resolved) {
@@ -323,8 +514,8 @@ async function enhanceMergeRequestList() {
 
     const metaList = $(mergeRequest).find('.issuable-meta ul, ul.controls')[0];
 
-    await addMergeRequestThreadMeta(metaList, mergeRequestUrl);
-    await addMergeRequestDiffMeta(metaList, mergeRequestUrl);
+    addMergeRequestThreadMeta(metaList, mergeRequestUrl);
+    addMergeRequestDiffMeta(metaList, mergeRequestUrl);
 
     $(mergeRequest).on('click', () => {
       ensureSidePanel('MR Panel', mergeRequestUrl);
@@ -472,7 +663,7 @@ const enhanceIssueCard: MutationCallback = async (
           const total = relatedMergeRequest.length;
 
           const opened = relatedMergeRequest.filter(
-            (mergeRequest) => mergeRequest.state === 'opened',
+            mergeRequest => mergeRequest.state === 'opened',
           ).length;
 
           createIssueCardMergeRequestInfo(infoItems, opened, total);

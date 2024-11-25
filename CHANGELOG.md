@@ -2,7 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1] - 2024-11-18
+## [1.2.0] - 2024-11-25
+
+### 🚀 Features
+
+- Support issue modal in issue board ([#9](https://github.com/braineo/gitlab-booster/issues/9))
+- Show thread actions for merge requests ([#10](https://github.com/braineo/gitlab-booster/issues/10))
+
+### ⚙️ Miscellaneous Tasks
+
+- Remove previous javascript implementation
+
+## [1.1.0] - 2024-11-18
 
 ### 🚀 Features
 

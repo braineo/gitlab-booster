@@ -56,6 +56,17 @@ interface User {
   name: string;
 }
 
+interface MergeRequestThreadAction {
+  /** number of threads waiting for others reply to discussion started by us */
+  waitForTheirsCount: number;
+  /** number of threads waiting for us to reply or resolve */
+  waitForOursCount: number;
+  /** number of other open threads */
+  otherUnresolvedCount: number;
+  /** whether user has reviewed the merge request */
+  needUserReview: boolean;
+}
+
 //
 // API
 //
@@ -98,6 +109,64 @@ function createThreadsBadge(
     )
     .text(`${resolved}/${resolvable} threads resolved`)
     .prependTo(li);
+}
+
+function createThreadActionBadges(
+  element: HTMLElement,
+  action: MergeRequestThreadAction,
+) {
+  const li = $('<li/>')
+    .addClass('issuable-comments d-none d-sm-flex')
+    .prependTo(element);
+
+  const createIconText = (
+    icon: string,
+    title: string,
+    text?: string,
+    badgeClassName?: string,
+  ) => {
+    return $('<span/>', {
+      title,
+      class: `gl-badge badge badge-pill ${badgeClassName ? `badge-${badgeClassName}` : ''} sm has-tooltip`,
+    })
+      .css({
+        'font-family': 'SauceCodePro Mono',
+      })
+      .text(`${icon} ${text ?? ''}`);
+  };
+
+  if (action.waitForOursCount) {
+    createIconText(
+      '\uf063',
+      'need your response',
+      action.waitForOursCount.toString(),
+      'danger',
+    ).prependTo(li);
+  }
+
+  if (action.waitForTheirsCount) {
+    createIconText(
+      '\uf062',
+      'wait for response',
+      action.waitForTheirsCount.toString(),
+      'muted',
+    ).prependTo(li);
+  }
+
+  if (action.otherUnresolvedCount) {
+    createIconText(
+      '\uf0e5',
+      'other threads',
+      action.otherUnresolvedCount.toString(),
+      'warning',
+    ).prependTo(li);
+  }
+
+  if (action.needUserReview) {
+    createIconText('\uf256', 'need your review', undefined, 'danger').prependTo(
+      li,
+    );
+  }
 }
 
 function createDiffStat(
@@ -281,12 +350,6 @@ async function addMergeRequestThreadMeta(
     }
   }
 
-  if (resolvable > resolved) {
-    createThreadsBadge(element, 'danger', resolved, resolvable);
-  } else if (resolved === resolvable && resolvable > 0) {
-    createThreadsBadge(element, 'success', resolved, resolvable);
-  }
-
   const listItem = await fetchGitLabData<MergeRequestListItem>(
     `${mergeRequestUrl}.json`,
   );
@@ -297,6 +360,9 @@ async function addMergeRequestThreadMeta(
 
   const userId = currentUser?.id;
 
+  // render simple badge if cannot get the user or the merge request detail from API
+  let renderFallback = true;
+
   if (listItem && userId) {
     const mergeRequest = await fetchGitLabData<MergeRequest>(
       getApiUrl(
@@ -305,16 +371,21 @@ async function addMergeRequestThreadMeta(
     );
 
     if (mergeRequest) {
+      renderFallback = false;
+
+      const action: MergeRequestThreadAction = {
+        waitForOursCount: 0,
+        waitForTheirsCount: 0,
+        otherUnresolvedCount: 0,
+        needUserReview: false,
+      };
+
       const isUserAuthor = mergeRequest.author.id === userId;
       const isUserReviewer =
         mergeRequest.assignees.some(user => user.id === userId) ||
         mergeRequest.reviewers.some(user => user.id === userId);
 
       if (isUserAuthor) {
-        // wait for others' response
-        let waitForTheirsCount = 0;
-        // need for my response
-        let waitForOursCount = 0;
         for (const discusstion of discussions) {
           if (
             discusstion.resolvable &&
@@ -323,22 +394,16 @@ async function addMergeRequestThreadMeta(
           ) {
             // biome-ignore lint: cannot be empty
             if (discusstion.notes.at(-1)!.author.id === userId) {
-              waitForTheirsCount += 1;
+              action.waitForTheirsCount += 1;
             } else {
-              waitForOursCount += 1;
+              action.waitForOursCount += 1;
             }
           }
         }
 
-        console.log(mergeRequest.title, waitForTheirsCount, waitForOursCount);
+        createThreadActionBadges(element, action);
       } else if (isUserReviewer) {
-        // thread wait for others' response
-        let waitForTheirsCount = 0;
-        // thread need my response
-        let waitForOursCount = 0;
-        // thread started by someone else
-        let otherUnresolvedCount = 0;
-        let needUserReview = true;
+        action.needUserReview = true;
 
         for (const discusstion of discussions) {
           if (
@@ -348,32 +413,35 @@ async function addMergeRequestThreadMeta(
           ) {
             // biome-ignore lint: cannot be empty
             if (discusstion.notes.at(0)!.author.id === userId) {
-              needUserReview = false;
+              action.needUserReview = false;
               // biome-ignore lint: cannot be empty
               if (discusstion.notes.at(-1)!.author.id === userId) {
-                waitForTheirsCount += 1;
+                action.waitForTheirsCount += 1;
               } else {
-                waitForOursCount += 1;
+                action.waitForOursCount += 1;
               }
             }
           }
-          otherUnresolvedCount =
-            resolvable - resolved - waitForTheirsCount - waitForOursCount;
+          action.otherUnresolvedCount =
+            resolvable -
+            resolved -
+            action.waitForTheirsCount -
+            action.waitForOursCount;
         }
 
-        // need my reviewed. any comment, upvote or approval
-        // wait for others' response to my thread
-        // wait for others' response to other thread
-        // need for my response
-        console.log(
-          mergeRequest.title,
-          waitForTheirsCount,
-          waitForOursCount,
-          otherUnresolvedCount,
-          needUserReview,
-        );
+        createThreadActionBadges(element, action);
       }
     }
+  }
+
+  if (!renderFallback) {
+    return;
+  }
+
+  if (resolvable > resolved) {
+    createThreadsBadge(element, 'danger', resolved, resolvable);
+  } else if (resolved === resolvable && resolvable > 0) {
+    createThreadsBadge(element, 'success', resolved, resolvable);
   }
 }
 

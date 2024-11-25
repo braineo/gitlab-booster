@@ -236,7 +236,9 @@ const openModal = (url: string) => {
     class: 'modal fade show d-block gl-modal',
   })
     .append(
-      $('<div/>', { class: 'modal-dialog modal-lg' }).append(modalContent),
+      $('<div/>', { class: 'modal-dialog modal-lg' })
+        .css({ 'max-width': '80vw' })
+        .append(modalContent),
     )
     .appendTo($('body'));
 

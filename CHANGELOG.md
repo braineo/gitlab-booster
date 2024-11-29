@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2024-11-29
+
+### 🚀 Features
+
+- Use a button to open issue detail from card ([#11](https://github.com/braineo/gitlab-booster/issues/11))
+
 ## [1.2.0] - 2024-11-25
 
 ### 🚀 Features

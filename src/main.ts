@@ -668,7 +668,16 @@ const enhanceIssueCard: MutationCallback = async (
 
           createIssueCardMergeRequestInfo(infoItems, opened, total);
 
-          node.addEventListener('click', () => openModal(issueUrl));
+          $('<button/>', { class: 'btn btn-default btn-sm gl-button' })
+            .css({
+              'font-family': 'SauceCodePro Mono',
+            })
+            .text('\uf08e')
+            .on('click', e => {
+              e.stopPropagation();
+              openModal(issueUrl);
+            })
+            .appendTo(infoItems);
         }
       }
     } else if (mutation.type === 'attributes') {

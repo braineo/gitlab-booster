@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.3] - 2025-03-03
+
+### 🐛 Bug Fixes
+
+- Do not show wait for review if approved or requested changes
+
+### ⚙️ Miscellaneous Tasks
+
+- Trigger ci for pull requests ([#13](https://github.com/braineo/gitlab-booster/issues/13))
+
+## [1.2.2] - 2024-12-27
+
+### 🐛 Bug Fixes
+
+- Adapt to dark theme background with css vars
+
 ## [1.2.1] - 2024-11-29
 
 ### 🚀 Features

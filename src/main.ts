@@ -22,12 +22,14 @@ interface DiffsMeta {
 
 interface DiscussionNote {
   type: null | 'LabelNote' | 'DiscussionNote';
+  note: string;
   author: User;
 }
 
 interface MergeRequestDiscussion {
   resolved: boolean;
   resolvable: boolean;
+  individual_note: boolean;
   notes: DiscussionNote[];
 }
 
@@ -43,6 +45,7 @@ interface MergeRequestListItem {
 
 interface MergeRequest {
   title: string;
+  iid: number;
   project_id: number;
   author: User;
   state: string;
@@ -422,6 +425,19 @@ async function addMergeRequestThreadMeta(
               }
             }
           }
+
+          if (discusstion.individual_note && discusstion.notes.length > 0) {
+            const note = discusstion.notes[0];
+
+            if (
+              (note.note === 'requested changes' ||
+                note.note === 'approved this merge request') &&
+              note.author.id === userId
+            ) {
+              action.needUserReview = false;
+            }
+          }
+
           action.otherUnresolvedCount =
             resolvable -
             resolved -

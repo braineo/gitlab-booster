@@ -189,14 +189,20 @@ function createDiffStat(
       ),
 
       $('<div/>', {
-        class:
-          'diff-stats-group gl-text-green-600 gl-display-flex gl-align-items-center bold',
-      }).append($('<span/>').text('+'), $('<span/>').text(`${addLineCount}`)),
+        class: 'diff-stats-group gl-display-flex gl-align-items-center bold',
+      })
+        .css({
+          color: 'var(--gl-color-green-600)',
+        })
+        .append($('<span/>').text('+'), $('<span/>').text(`${addLineCount}`)),
 
       $('<div/>', {
-        class:
-          'diff-stats-group gl-text-red-500 gl-display-flex gl-align-items-center bold',
-      }).append($('<span/>').text('-'), $('<span/>').text(`${deleteLinCount}`)),
+        class: 'diff-stats-group gl-display-flex gl-align-items-center bold',
+      })
+        .css({
+          color: 'var(--gl-color-red-600)',
+        })
+        .append($('<span/>').text('-'), $('<span/>').text(`${deleteLinCount}`)),
     )
     .prependTo(element);
 }

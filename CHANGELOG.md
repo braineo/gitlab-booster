@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.4] - 2025-04-15
+
+### 🐛 Bug Fixes
+
+- Fix diff number font color due to missing class name
+
 ## [1.2.3] - 2025-03-03
 
 ### 🐛 Bug Fixes

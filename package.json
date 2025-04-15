@@ -1,6 +1,6 @@
 {
   "name": "gitlab-booster",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Boost productivity for code reviewers on gitlab",
   "main": "gitlab-booster.js",
   "type": "module",

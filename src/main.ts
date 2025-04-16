@@ -283,7 +283,7 @@ function ensureSidePanel(panelName: string, url: string) {
   });
 }
 
-const openModal = (url: string) => {
+export const openModal = (url: string) => {
   const modal = $('#gitlab-booster-modal');
 
   if (modal) {

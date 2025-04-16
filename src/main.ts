@@ -241,13 +241,8 @@ function ensurePanelLayout() {
   if (!layout) {
     return;
   }
-  $(layout).css({ display: 'flex', height: '100vh', overflow: 'hidden' });
 
-  const content = document.querySelector('div.content-wrapper');
-  if (!content) {
-    return;
-  }
-  $(content).css({ overflowY: 'scroll' });
+  $(layout).css({ display: 'flex' });
 }
 
 function ensureSidePanel(panelName: string, url: string) {
@@ -547,18 +542,12 @@ async function enhanceMergeRequestList() {
 
 // Function to enhance the issue detail page with related project names of merge requests
 async function enhanceIssueDetailPage() {
-  const title = $('#related-merge-requests')[0];
-  if (!title) {
-    // no related merge requests
-    return;
-  }
-
   ensurePanelLayout();
 
   // select related items and exclude related issue
   // need to wait for the list to show up as the issue page loads first then loads the related merge request asynchronously
   waitForKeyElements(
-    '.issue-details.issuable-details.js-issue-details div.js-issue-widgets .related-items-list li:not(.js-related-issues-token-list-item)',
+    '#developmentitems > div.crud-body > div > ul > li',
     (mergeRequest: Element) => {
       (async () => {
         console.debug(
@@ -566,14 +555,16 @@ async function enhanceIssueDetailPage() {
           mergeRequest,
         );
 
-        const statusSvg = mergeRequest.querySelector('.item-title svg');
-        if (!statusSvg) {
-          return;
-        }
-        const mergeRequestStatus = statusSvg.getAttribute('aria-label');
+        const statusBadge = mergeRequest.querySelector(
+          'div.item-meta span.gl-badge-content',
+        );
 
-        const mergeRequestUrl =
-          mergeRequest.querySelector<HTMLAnchorElement>('.item-title a')?.href;
+        const mergeRequestStatus = statusBadge?.textContent ?? 'opened';
+
+        const mergeRequestAnchor =
+          mergeRequest.querySelector<HTMLAnchorElement>('.item-title a');
+
+        const mergeRequestUrl = mergeRequestAnchor?.href;
 
         if (!mergeRequestUrl) {
           return;
@@ -583,26 +574,25 @@ async function enhanceIssueDetailPage() {
           ensureSidePanel('MR Panel', mergeRequestUrl);
         });
 
-        switch (mergeRequestStatus) {
-          case 'opened': {
-            $(mergeRequest).css({
-              'background-color': 'var(--gl-status-warning-background-color)',
-            });
-
-            break;
-          }
+        switch (mergeRequestStatus?.trim().toLowerCase()) {
           case 'merged': {
             break;
           }
 
           case 'closed': {
-            $(mergeRequest).css({
-              'background-color': '#c1c1c14d',
-              filter: 'grayscale(1)',
+            $(mergeRequestAnchor).css({
               'text-decoration': 'line-through',
+            });
+            $(mergeRequest).css({
+              filter: 'grayscale(1)',
             });
             // no need to show the closed details
             return;
+          }
+          default: {
+            $(mergeRequestAnchor).css({
+              color: 'var(--primary)',
+            });
           }
         }
 
@@ -692,17 +682,6 @@ const enhanceIssueCard: MutationCallback = async (
           ).length;
 
           createIssueCardMergeRequestInfo(infoItems, opened, total);
-
-          $('<button/>', { class: 'btn btn-default btn-sm gl-button' })
-            .css({
-              'font-family': 'SauceCodePro Mono',
-            })
-            .text('\uf08e')
-            .on('click', e => {
-              e.stopPropagation();
-              openModal(issueUrl);
-            })
-            .appendTo(infoItems);
         }
       }
     } else if (mutation.type === 'attributes') {
@@ -736,8 +715,6 @@ const issueDetailRegex = /\/issues\/\d+/;
 
 const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
 
-const issueListRegex = /\/issues(?!\/\d+)/;
-
 const epicListRegex = /\/epics(?!\/\d+)/;
 
 const issueBoardRegex = /\/boards\/\d+/;
@@ -749,10 +726,6 @@ const enhance = () => {
 
   if (issueDetailRegex.test(window.location.href)) {
     enhanceIssueDetailPage();
-  }
-
-  if (issueListRegex.test(window.location.href)) {
-    enhanceIssueList();
   }
 
   if (epicListRegex.test(window.location.href)) {

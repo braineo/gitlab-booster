@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2025-04-17
+
+### 🐛 Bug Fixes
+
+- Catch up css changes for new issue view in gitlab 17.10
+
 ## [1.2.4] - 2025-04-15
 
 ### 🐛 Bug Fixes

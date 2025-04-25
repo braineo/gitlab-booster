@@ -130,7 +130,9 @@ function createThreadActionBadges(
   ) => {
     return $('<span/>', {
       title,
-      class: `gl-badge badge badge-pill ${badgeClassName ? `badge-${badgeClassName}` : ''} sm has-tooltip`,
+      class: `gl-badge badge badge-pill ${
+        badgeClassName ? `badge-${badgeClassName}` : ''
+      } sm has-tooltip`,
     })
       .css({
         'font-family': 'SauceCodePro Mono',
@@ -283,45 +285,64 @@ function ensureSidePanel(panelName: string, url: string) {
   });
 }
 
-export const openModal = (url: string) => {
-  const modal = $('#gitlab-booster-modal');
+const createOpenModalButton = (url: string) => {
+  return $('<button/>', { class: 'btn btn-default btn-sm gl-button' })
+    .css({
+      'font-family': 'SauceCodePro Mono',
+    })
+    .text('\uf08e')
+    .on('click', e => {
+      e.stopPropagation();
+      openModal(url);
+    });
+};
 
-  if (modal) {
-    modal.remove();
+export const openModal = (url: string) => {
+  let modal = $('#gitlab-booster-modal');
+
+  if (!modal.length) {
+    // Create the modal only if it doesn't exist
+    const modalContent = $('<div/>', { class: 'modal-content' }).append(
+      $('<header/>', { class: 'modal-header' }).append(
+        $('<h2/>', { textContent: 'Quick preview' }),
+        $('<button/>', {
+          class:
+            'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
+        })
+          .append($('<span/>').text('Close Modal'))
+          .on('click', () => {
+            modal.hide();
+          }),
+      ),
+    );
+
+    modal = $('<div/>', {
+      id: 'gitlab-booster-modal',
+      class: 'modal fade show gl-modal',
+    })
+      .append(
+        $('<div/>', { class: 'modal-dialog modal-lg' })
+          .css({ 'max-width': '80vw' })
+          .append(modalContent),
+      )
+      .appendTo($('body'));
+
+    GM_addElement(modalContent[0], 'iframe', {
+      id: 'issue-booster',
+      className: 'modal-body',
+      // @ts-ignore // typing says style is readonly
+      style: 'height: 80vh;',
+    });
   }
 
-  const modalContent = $('<div/>', { class: 'modal-content' }).append(
-    $('<header/>', { class: 'modal-header' }).append(
-      $('<h2/>', { textContent: 'Quick preview' }),
-      $('<button/>', {
-        class:
-          'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
-      })
-        .append($('<span/>').text('Close Modal'))
-        .on('click', () => {
-          document.querySelector('#gitlab-booster-modal')?.remove();
-        }),
-    ),
-  );
+  // Update the iframe's URL
+  const iframe = modal.find('#issue-booster')[0] as HTMLIFrameElement;
+  if (iframe) {
+    iframe.src = url;
+  }
 
-  $('<div/>', {
-    id: 'gitlab-booster-modal',
-    class: 'modal fade show d-block gl-modal',
-  })
-    .append(
-      $('<div/>', { class: 'modal-dialog modal-lg' })
-        .css({ 'max-width': '80vw' })
-        .append(modalContent),
-    )
-    .appendTo($('body'));
-
-  const iframe = GM_addElement(modalContent[0], 'iframe', {
-    id: 'issue-booster',
-    src: url,
-  });
-
-  iframe.className = 'modal-body';
-  iframe.setAttribute('style', 'height: 80vh;');
+  // Show the modal
+  modal.show();
 };
 
 //
@@ -370,7 +391,9 @@ async function addMergeRequestThreadMeta(
   if (listItem && userId) {
     const mergeRequest = await fetchGitLabData<MergeRequest>(
       getApiUrl(
-        `/projects/${encodeURIComponent(listItem.target_project_full_path)}/merge_requests/${listItem.iid}`,
+        `/projects/${encodeURIComponent(
+          listItem.target_project_full_path,
+        )}/merge_requests/${listItem.iid}`,
       ),
     );
 
@@ -534,9 +557,7 @@ async function enhanceMergeRequestList() {
     addMergeRequestThreadMeta(metaList, mergeRequestUrl);
     addMergeRequestDiffMeta(metaList, mergeRequestUrl);
 
-    $(mergeRequest).on('click', () => {
-      ensureSidePanel('MR Panel', mergeRequestUrl);
-    });
+    createOpenModalButton(mergeRequestUrl).appendTo(metaList);
   }
 }
 
@@ -569,10 +590,6 @@ async function enhanceIssueDetailPage() {
         if (!mergeRequestUrl) {
           return;
         }
-
-        $(mergeRequest).on('click', () => {
-          ensureSidePanel('MR Panel', mergeRequestUrl);
-        });
 
         switch (mergeRequestStatus?.trim().toLowerCase()) {
           case 'merged': {
@@ -611,6 +628,8 @@ async function enhanceIssueDetailPage() {
         if (!metaDiv) {
           return;
         }
+
+        createOpenModalButton(mergeRequestUrl).appendTo(metaDiv);
 
         if (mergeRequestStatus === 'opened') {
           await addMergeRequestThreadMeta(metaDiv, mergeRequestUrl);

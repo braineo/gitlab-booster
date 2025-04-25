@@ -335,13 +335,11 @@ export const openModal = (url: string) => {
     });
   }
 
-  // Update the iframe's URL
   const iframe = modal.find('#issue-booster')[0] as HTMLIFrameElement;
   if (iframe && iframe.src !== url) {
     iframe.src = url;
   }
 
-  // Show the modal
   modal.show();
 };
 

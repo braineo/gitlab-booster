@@ -337,7 +337,7 @@ export const openModal = (url: string) => {
 
   // Update the iframe's URL
   const iframe = modal.find('#issue-booster')[0] as HTMLIFrameElement;
-  if (iframe) {
+  if (iframe && iframe.src !== url) {
     iframe.src = url;
   }
 
@@ -563,8 +563,6 @@ async function enhanceMergeRequestList() {
 
 // Function to enhance the issue detail page with related project names of merge requests
 async function enhanceIssueDetailPage() {
-  ensurePanelLayout();
-
   // select related items and exclude related issue
   // need to wait for the list to show up as the issue page loads first then loads the related merge request asynchronously
   waitForKeyElements(

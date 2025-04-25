@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2025-04-25
+
+### ⚡ Performance
+
+- Improve the performance of opening MRs inline ([#17](https://github.com/braineo/gitlab-booster/issues/17))
+
 ## [1.3.0] - 2025-04-17
 
 ### 🐛 Bug Fixes

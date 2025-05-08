@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.2] - 2025-05-08
+
+### 🐛 Bug Fixes
+
+- Tweak padding top and bottom because of css class contamination ([#18](https://github.com/braineo/gitlab-booster/issues/18))
+
 ## [1.3.1] - 2025-04-25
 
 ### ⚡ Performance

@@ -555,7 +555,12 @@ async function enhanceMergeRequestList() {
     addMergeRequestThreadMeta(metaList, mergeRequestUrl);
     addMergeRequestDiffMeta(metaList, mergeRequestUrl);
 
-    createOpenModalButton(mergeRequestUrl).appendTo(metaList);
+    createOpenModalButton(mergeRequestUrl)
+      .css({
+        paddingTop: 0,
+        paddingBottom: 0,
+      })
+      .appendTo(metaList);
   }
 }
 

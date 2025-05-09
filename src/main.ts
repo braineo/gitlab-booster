@@ -90,6 +90,22 @@ async function fetchGitLabData<T>(url: string): Promise<T | null> {
   return await response.json();
 }
 
+async function updateGitlabData<T>(
+  url: string,
+  data: object,
+): Promise<T | null> {
+  const response = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    console.error('Failed to fetch GitLab data:', response.statusText);
+    return null;
+  }
+  return await response.json();
+}
+
 let currentUser: User | null;
 
 //
@@ -564,6 +580,66 @@ async function enhanceMergeRequestList() {
   }
 }
 
+/**
+ * add additional functions for merge requesst view.
+ *  1. Add covert to draft button
+ */
+function enhanceMergeRequestPage() {
+  console.log('updating merge request page');
+
+  waitForKeyElements(
+    '.block.reviewer > div:not([class])',
+    (reviewerBoardElement: Element) => {
+      const convertToDraftButton = $('<span/>', {
+        class: 'gl-flex gl-text-base gl-leading-normal !gl-text-subtle',
+      })
+        .text('Still in progress?')
+        .append(
+          $('<button/>', {
+            type: 'button',
+            class:
+              'btn gl-ml-2 !gl-text-inherit hover:!gl-text-link btn-link btn-md gl-button',
+          })
+            .on('click', () => {
+              console.log('haaaaaa');
+            })
+            .append(
+              $('<span/>', {
+                class: 'gl-button-text',
+              }).text('convert to draft'),
+            ),
+        );
+      console.log(convertToDraftButton, 'appending to', reviewerBoardElement);
+      convertToDraftButton.appendTo(reviewerBoardElement);
+    },
+  );
+
+  // // need to wait for
+  // const reviewerBoardElement = document.querySelector(
+  //   '.block.reviewer > div:not([class])',
+  // );
+
+  // if (reviewerBoardElement) {
+  //   const convertToDraftButton = $('<span/>', {
+  //     class: 'gl-flex gl-text-base gl-leading-normal !gl-text-subtle',
+  //   })
+  //     .text('Still in progress?')
+  //     .append(
+  //       $('<button/>', {
+  //         type: 'button',
+  //         class:
+  //           'btn gl-ml-2 !gl-text-inherit hover:!gl-text-link btn-link btn-md gl-button',
+  //       }).append(
+  //         $('<span/>', {
+  //           class: 'gl-button-text',
+  //         }).text('convert to draft'),
+  //       ),
+  //     );
+  //   console.log(convertToDraftButton, 'appending to', reviewerBoardElement);
+  //   convertToDraftButton.appendTo(reviewerBoardElement);
+  // }
+}
+
 // Function to enhance the issue detail page with related project names of merge requests
 async function enhanceIssueDetailPage() {
   // select related items and exclude related issue
@@ -735,6 +811,8 @@ const issueDetailRegex = /\/issues\/\d+/;
 
 const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
 
+const mergeRequestPageRegex = /\/merge_requests(\/\d+)/;
+
 const epicListRegex = /\/epics(?!\/\d+)/;
 
 const issueBoardRegex = /\/boards\/\d+/;
@@ -755,6 +833,10 @@ const enhance = () => {
 
   if (issueBoardRegex.test(window.location.href)) {
     enhanceIssueBoard();
+  }
+
+  if (mergeRequestPageRegex.test(window.location.href)) {
+    enhanceMergeRequestPage();
   }
 };
 // Run the script when the DOM is fully loaded

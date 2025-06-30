@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2025-06-30
+
+### 🚀 Features
+
+- Show iteration rollover count in issue card
+
+### 🐛 Bug Fixes
+
+- Fix issue board not enhanced when it is the only board in repo
+
 ## [1.3.2] - 2025-05-08
 
 ### 🐛 Bug Fixes

@@ -727,7 +727,6 @@ const enhanceIssueCard: MutationCallback = async (
           createIssueCardMergeRequestInfo(infoItems, opened, total);
 
           // Collect rollover count for the issue
-
           const iterationEvents =
             (await fetchGitLabData<IterationEvent[]>(
               getApiUrl(
@@ -774,7 +773,8 @@ const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
 
 const epicListRegex = /\/epics(?!\/\d+)/;
 
-const issueBoardRegex = /\/boards\/\d+/;
+// When the board is the only board in the repo, the url is `/boards`
+const issueBoardRegex = /\/boards(?:\/\d+)?(?:\/)?(?:\?|$)/;
 
 const enhance = () => {
   if (mergeRequestListRegex.test(window.location.href)) {

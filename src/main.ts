@@ -53,6 +53,12 @@ interface MergeRequest {
   reviewers: User[];
 }
 
+interface IterationEvent {
+  id: number;
+  user: User;
+  action: string;
+}
+
 interface User {
   id: number;
   username: string;
@@ -233,6 +239,23 @@ function createIssueCardMergeRequestInfo(
       $('<span/>', {
         class: 'gl-inline-block gl-truncate gl-font-bold',
       }).text(total === 0 ? '-/-' : `${total - opened}/${total}`),
+    )
+    .appendTo(inline);
+}
+
+function createIssueCardIterationInfo(element: HTMLElement, rollover: number) {
+  if (rollover < 1) {
+    return;
+  }
+  const inline = $('<span/>').appendTo(element);
+  $('<div/>', {
+    class:
+      'issue-milestone-details gl-flex gl-max-w-15 gl-gap-2 gl-mr-3 gl-inline-flex gl-max-w-15 gl-cursor-help gl-items-center gl-align-bottom gl-text-sm gl-text-gray-500',
+  })
+    .append(
+      $('<span/>', {
+        class: 'gl-inline-block gl-truncate gl-font-bold',
+      }).text(`🔄×${rollover}`),
     )
     .appendTo(inline);
 }
@@ -687,7 +710,7 @@ const enhanceIssueCard: MutationCallback = async (
           if (!issue) {
             continue;
           }
-
+          // Collect merge requests for the issue
           const relatedMergeRequest =
             (await fetchGitLabData<MergeRequest[]>(
               getApiUrl(
@@ -702,6 +725,20 @@ const enhanceIssueCard: MutationCallback = async (
           ).length;
 
           createIssueCardMergeRequestInfo(infoItems, opened, total);
+
+          // Collect rollover count for the issue
+
+          const iterationEvents =
+            (await fetchGitLabData<IterationEvent[]>(
+              getApiUrl(
+                `/projects/${issue.project_id}/issues/${issue.iid}/resource_iteration_events`,
+              ),
+            )) ?? [];
+
+          createIssueCardIterationInfo(
+            infoItems,
+            iterationEvents.filter(event => event.action === 'add').length - 1,
+          );
         }
       }
     } else if (mutation.type === 'attributes') {

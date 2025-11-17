@@ -601,8 +601,6 @@ async function enhanceMergeRequestDetailPage() {
     !title.toLowerCase().startsWith('draft:') &&
     csrfToken
   ) {
-    console.log('add convert to draft button', reviewerPanel);
-
     const $description = $(/* HTML */ `
       <div class="gl-flex" style="padding-top: 1rem; align-items: center">
         <span class="gl-mb-0 gl-inline-block gl-text-sm gl-text-subtle"

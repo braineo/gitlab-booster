@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2025-11-17
+
+### 🚀 Features
+
+- Add covert to draft shortcut ([#20](https://github.com/braineo/gitlab-booster/issues/20))
+
 ## [1.4.0] - 2025-06-30
 
 ### 🚀 Features

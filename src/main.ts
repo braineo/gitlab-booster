@@ -589,13 +589,16 @@ async function enhanceMergeRequestList() {
 
 async function enhanceMergeRequestDetailPage() {
   const reviewerPanel = document.querySelector('.block.reviewer');
-  const title = document.querySelector('h1.title').innerText ?? '';
-  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+  const title =
+    document.querySelector<HTMLElement>('h1.title')?.innerText ?? '';
+  const csrfToken = document.querySelector<HTMLMetaElement>(
+    'meta[name="csrf-token"]',
+  )?.content;
 
   if (
     reviewerPanel &&
     title.length > 0 &&
-    !title.toLowerCase().starsWith('draft:') &&
+    !title.toLowerCase().startsWith('draft:') &&
     csrfToken
   ) {
     console.log('add convert to draft button', reviewerPanel);

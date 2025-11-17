@@ -587,6 +587,67 @@ async function enhanceMergeRequestList() {
   }
 }
 
+async function enhanceMergeRequestDetailPage() {
+  const reviewerPanel = document.querySelector('.block.reviewer');
+  const title =
+    document.querySelector<HTMLElement>('h1.title')?.innerText ?? '';
+  const csrfToken = document.querySelector<HTMLMetaElement>(
+    'meta[name="csrf-token"]',
+  )?.content;
+
+  if (
+    reviewerPanel &&
+    title.length > 0 &&
+    !title.toLowerCase().startsWith('draft:') &&
+    csrfToken
+  ) {
+    const $description = $(/* HTML */ `
+      <div class="gl-flex" style="padding-top: 1rem; align-items: center">
+        <span class="gl-mb-0 gl-inline-block gl-text-sm gl-text-subtle"
+          >Still in progress?</span
+        >
+        <button
+          class="gl-ml-2 !gl-text-sm btn gl-button btn-confirm btn-sm btn-confirm-tertiary"
+        >
+          <span class="gl-button-text" style="font-size: 0.7rem;"
+            >Convert to draft</span
+          >
+        </button>
+      </div>
+    `);
+
+    $description.find('.gl-button').on('click', async () => {
+      const urlMatch = window.location.pathname.match(
+        /\/(.+)\/-\/merge_requests\/(\d+)/,
+      );
+
+      if (!urlMatch) {
+        console.error('Could not parse MR URL');
+        return;
+      }
+
+      const projectPath = urlMatch[1];
+      const mrIid = urlMatch[2];
+      await fetch(
+        getApiUrl(
+          `/projects/${encodeURIComponent(projectPath)}/merge_requests/${mrIid}`,
+        ),
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          body: JSON.stringify({ title: `Draft: ${title}` }),
+        },
+      );
+      await window.location.reload();
+    });
+
+    $description.appendTo(reviewerPanel);
+  }
+}
+
 // Function to enhance the issue detail page with related project names of merge requests
 async function enhanceIssueDetailPage() {
   // select related items and exclude related issue
@@ -769,6 +830,8 @@ const enhanceIssueBoard = () => {
 
 const issueDetailRegex = /\/issues\/\d+/;
 
+const mergeRequestDetailRegex = /\/merge_requests\/(\d+)/;
+
 const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
 
 const epicListRegex = /\/epics(?!\/\d+)/;
@@ -779,6 +842,10 @@ const issueBoardRegex = /\/boards(?:\/\d+)?(?:\/)?(?:\?|$)/;
 const enhance = () => {
   if (mergeRequestListRegex.test(window.location.href)) {
     enhanceMergeRequestList();
+  }
+
+  if (mergeRequestDetailRegex.test(window.location.href)) {
+    enhanceMergeRequestDetailPage();
   }
 
   if (issueDetailRegex.test(window.location.href)) {

@@ -589,20 +589,37 @@ async function enhanceMergeRequestList() {
 
 async function enhanceMergeRequestDetailPage() {
   const reviewerPanel = document.querySelector('.block.reviewer');
-  const title =
-    document.querySelector<HTMLElement>('h1.title')?.innerText ?? '';
+
+  const getTitle = () => {
+    return document.querySelector<HTMLElement>('h1.title')?.innerText ?? '';
+  };
+  const title = getTitle();
+  document.querySelector<HTMLElement>('h1.title')?.innerText ?? '';
   const csrfToken = document.querySelector<HTMLMetaElement>(
     'meta[name="csrf-token"]',
   )?.content;
 
-  if (
-    reviewerPanel &&
-    title.length > 0 &&
-    !title.toLowerCase().startsWith('draft:') &&
-    csrfToken
-  ) {
+  const mrisDraft =
+    title.length > 0 && title.toLowerCase().startsWith('draft:');
+
+  if (!reviewerPanel) {
+    return;
+  }
+
+  const convertButton = reviewerPanel.querySelector('#convert-to-draft-button');
+
+  if (mrisDraft && convertButton) {
+    convertButton.remove();
+    return;
+  }
+
+  if (!mrisDraft && !convertButton && csrfToken) {
     const $description = $(/* HTML */ `
-      <div class="gl-flex" style="padding-top: 1rem; align-items: center">
+      <div
+        id="convert-to-draft-button"
+        class="gl-flex"
+        style="padding-top: 1rem; align-items: center"
+      >
         <span class="gl-mb-0 gl-inline-block gl-text-sm gl-text-subtle"
           >Still in progress?</span
         >
@@ -628,6 +645,7 @@ async function enhanceMergeRequestDetailPage() {
 
       const projectPath = urlMatch[1];
       const mrIid = urlMatch[2];
+      const title = getTitle();
       await fetch(
         getApiUrl(
           `/projects/${encodeURIComponent(projectPath)}/merge_requests/${mrIid}`,
@@ -641,7 +659,7 @@ async function enhanceMergeRequestDetailPage() {
           body: JSON.stringify({ title: `Draft: ${title}` }),
         },
       );
-      await window.location.reload();
+      window.location.reload();
     });
 
     $description.appendTo(reviewerPanel);

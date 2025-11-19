@@ -594,7 +594,7 @@ async function enhanceMergeRequestDetailPage() {
     return document.querySelector<HTMLElement>('h1.title')?.innerText ?? '';
   };
   const title = getTitle();
-  document.querySelector<HTMLElement>('h1.title')?.innerText ?? '';
+
   const csrfToken = document.querySelector<HTMLMetaElement>(
     'meta[name="csrf-token"]',
   )?.content;

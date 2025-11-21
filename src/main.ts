@@ -774,7 +774,7 @@ const enhanceIssueCard: MutationCallback = async (
       for (const node of mutation.addedNodes) {
         if (node instanceof Element && node.matches('li.board-card')) {
           const issueUrl = node.querySelector<HTMLAnchorElement>(
-            'h4.board-card-title > a',
+            'h3.board-card-title > a',
           )?.href;
 
           const infoItems = node.querySelector<HTMLElement>(

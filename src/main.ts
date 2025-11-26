@@ -747,7 +747,7 @@ async function enhanceIssueDetailPage() {
   );
 }
 
-function enhanceIssueList() {
+export function enhanceIssueList() {
   ensurePanelLayout();
 
   waitForKeyElements('ul.issues-list > li', (issue: Element) => {
@@ -852,8 +852,6 @@ const mergeRequestDetailRegex = /\/merge_requests\/(\d+)/;
 
 const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
 
-const epicListRegex = /\/epics(?!\/\d+)/;
-
 // When the board is the only board in the repo, the url is `/boards`
 const issueBoardRegex = /\/boards(?:\/\d+)?(?:\/)?(?:\?|$)/;
 
@@ -868,11 +866,6 @@ const enhance = () => {
 
   if (issueDetailRegex.test(window.location.href)) {
     enhanceIssueDetailPage();
-  }
-
-  if (epicListRegex.test(window.location.href)) {
-    // epic list has the same style with issue list.
-    enhanceIssueList();
   }
 
   if (issueBoardRegex.test(window.location.href)) {

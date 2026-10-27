@@ -260,54 +260,6 @@ function createIssueCardIterationInfo(element: HTMLElement, rollover: number) {
     .appendTo(inline);
 }
 
-function ensurePanelLayout() {
-  // ensure two column scroll structure
-  const layout = document.querySelector('div.layout-page');
-  if (!layout) {
-    return;
-  }
-
-  $(layout).css({ display: 'flex' });
-}
-
-function ensureSidePanel(panelName: string, url: string) {
-  const buttonId = `close-${panelName.toLowerCase().replaceAll(' ', '-')}`;
-
-  if (!document.querySelector(`#${buttonId}`)) {
-    const topBar = document.querySelector('.top-bar-container');
-    if (!topBar) {
-      return;
-    }
-    $(topBar).append(
-      $('<button/>', {
-        id: buttonId,
-        class:
-          'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
-      }).append($('<span/>').text(`Close ${panelName}`)),
-    );
-
-    $(`#${buttonId}`).on('click', () => {
-      $('#issue-booster').remove();
-      $(`#${buttonId}`).remove();
-    });
-  }
-
-  const layout = document.querySelector('div.layout-page');
-  if (!layout) {
-    return;
-  }
-  $('#issue-booster').remove();
-  // this is the only easy way to bypass CSP. But the tampermonkey can only addElement
-  GM_addElement(layout, 'iframe', {
-    id: 'issue-booster',
-    src: url,
-    // @ts-ignore // typing says style is readonly
-    style:
-      // make issue panel sticky
-      'width: 100%; height: 100vh; position: sticky; align-self: flex-start; top: 0; flex: 0 0 40%;',
-  });
-}
-
 const createOpenModalButton = (url: string) => {
   return $('<button/>', { class: 'btn btn-default btn-sm gl-button' })
     .css({
@@ -562,8 +514,6 @@ function dehydrateDiff(diffsMeta: DiffsMeta) {
 async function enhanceMergeRequestList() {
   const mergeRequests = document.querySelectorAll('.merge-request');
 
-  ensurePanelLayout();
-
   for (const mergeRequest of mergeRequests) {
     const mergeRequestUrl = mergeRequest.querySelector<HTMLAnchorElement>(
       '.merge-request-title-text a',
@@ -745,25 +695,6 @@ async function enhanceIssueDetailPage() {
     },
     true,
   );
-}
-
-export function enhanceIssueList() {
-  ensurePanelLayout();
-
-  waitForKeyElements('ul.issues-list > li', (issue: Element) => {
-    const issueUrl = issue.querySelector<HTMLAnchorElement>('a')?.href;
-
-    if (!issueUrl) {
-      console.error('cannot find url for issue');
-      return;
-    }
-
-    $(issue).on('click', () => {
-      ensureSidePanel('Issue Panel', issueUrl);
-    });
-    // keep watching this DOM because gitlab reuse this list element
-    return true;
-  });
 }
 
 const enhanceIssueCard: MutationCallback = async (

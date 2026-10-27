@@ -638,11 +638,21 @@ function enhanceIssueDetailPage() {
 const enhanceIssueCard: MutationCallback = async (mutationList: MutationRecord[]) => {
   for (const mutation of mutationList) {
     if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-      for (const node of mutation.addedNodes) {
-        if (node instanceof Element && node.matches("li.board-card")) {
-          const issueUrl = node.querySelector<HTMLAnchorElement>("h3.board-card-title > a")?.href;
+      for (const added of mutation.addedNodes) {
+        if (!(added instanceof Element)) {
+          continue;
+        }
+        // cards may be mounted directly or inside a newly rendered list
+        const cards = added.matches("li.board-card")
+          ? [added]
+          : added.querySelectorAll("li.board-card");
+        for (const node of cards) {
+          // GitLab now links cards to `/-/work_items/:iid`, which has no `.json` endpoint
+          const issueUrl = node
+            .querySelector<HTMLAnchorElement>("h3.board-card-title > a")
+            ?.href.replace("/-/work_items/", "/-/issues/");
 
-          const infoItems = node.querySelector<HTMLElement>("span.board-info-items");
+          const infoItems = node.querySelector<HTMLElement>(".board-info-items");
 
           if (!issueUrl || !infoItems) {
             continue;

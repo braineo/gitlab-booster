@@ -1,10 +1,10 @@
-import { GM_addElement } from '$';
-import $ from 'jquery';
-import { waitForKeyElements } from './waitForKeyElements';
+import { GM_addElement } from "$";
+import $ from "jquery";
+import { waitForKeyElements } from "./waitForKeyElements";
 
-GM_addElement('link', {
-  rel: 'stylesheet',
-  href: 'https://cdn.jsdelivr.net/npm/nf-sauce-code-pro@2.1.3/nf-font.min.css',
+GM_addElement("link", {
+  rel: "stylesheet",
+  href: "https://cdn.jsdelivr.net/npm/nf-sauce-code-pro@2.1.3/nf-font.min.css",
 });
 
 //
@@ -21,7 +21,7 @@ interface DiffsMeta {
 }
 
 interface DiscussionNote {
-  type: null | 'LabelNote' | 'DiscussionNote';
+  type: null | "LabelNote" | "DiscussionNote";
   note: string;
   author: User;
 }
@@ -87,10 +87,10 @@ const getApiUrl = (url: string): string => {
 
 async function fetchGitLabData<T>(url: string): Promise<T | null> {
   const response = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
   if (!response.ok) {
-    console.error('Failed to fetch GitLab data:', response.statusText);
+    console.error("Failed to fetch GitLab data:", response.statusText);
     return null;
   }
   return await response.json();
@@ -108,75 +108,59 @@ function createThreadsBadge(
   resolved: number,
   resolvable: number,
 ) {
-  const li = $('<li/>')
-    .addClass('issuable-comments d-none d-sm-flex')
-    .prependTo(element);
+  const li = $("<li/>").addClass("issuable-comments d-none d-sm-flex").prependTo(element);
 
-  $('<span/>')
-    .addClass(
-      `gl-badge badge badge-pill badge-${badgeClassName} sm has-tooltip`,
-    )
+  $("<span/>")
+    .addClass(`gl-badge badge badge-pill badge-${badgeClassName} sm has-tooltip`)
     .text(`${resolved}/${resolvable} threads resolved`)
     .prependTo(li);
 }
 
-function createThreadActionBadges(
-  element: HTMLElement,
-  action: MergeRequestThreadAction,
-) {
-  const li = $('<li/>')
-    .addClass('issuable-comments d-none d-sm-flex')
-    .prependTo(element);
-
-  const createIconText = (
-    icon: string,
-    title: string,
-    text?: string,
-    badgeClassName?: string,
-  ) => {
-    return $('<span/>', {
-      title,
-      class: `gl-badge badge badge-pill ${
-        badgeClassName ? `badge-${badgeClassName}` : ''
-      } sm has-tooltip`,
+const createIconText = (icon: string, title: string, text?: string, badgeClassName?: string) => {
+  return $("<span/>", {
+    title,
+    class: `gl-badge badge badge-pill ${
+      badgeClassName ? `badge-${badgeClassName}` : ""
+    } sm has-tooltip`,
+  })
+    .css({
+      "font-family": "SauceCodePro Mono",
     })
-      .css({
-        'font-family': 'SauceCodePro Mono',
-      })
-      .text(`${icon} ${text ?? ''}`);
-  };
+    .text(`${icon} ${text ?? ""}`);
+};
+
+function createThreadActionBadges(element: HTMLElement, action: MergeRequestThreadAction) {
+  const li = $("<li/>").addClass("issuable-comments d-none d-sm-flex").prependTo(element);
 
   if (action.waitForOursCount) {
     createIconText(
-      '\uf063',
-      'need your response',
+      "\uF063",
+      "need your response",
       action.waitForOursCount.toString(),
-      'danger',
+      "danger",
     ).prependTo(li);
   }
 
   if (action.waitForTheirsCount) {
     createIconText(
-      '\uf062',
-      'wait for response',
+      "\uF062",
+      "wait for response",
       action.waitForTheirsCount.toString(),
-      'muted',
+      "muted",
     ).prependTo(li);
   }
 
   if (action.otherUnresolvedCount) {
     createIconText(
-      '\uf0e5',
-      'other threads',
+      "\uF0E5",
+      "other threads",
       action.otherUnresolvedCount.toString(),
-      'warning',
+      "warning",
     ).prependTo(li);
   }
 
   if (action.needUserReview) {
-    createIconText('\uf256', 'need your review', undefined, 'danger').prependTo(
-      li,
-    );
+    createIconText("\uF256", "need your review", undefined, "danger").prependTo(li);
   }
 }
 
@@ -186,59 +170,55 @@ function createDiffStat(
   addLineCount: number,
   deleteLinCount: number,
 ) {
-  $('<div/>')
-    .css({ display: 'flex', 'flex-direction': 'row', gap: '3px' })
+  $("<div/>")
+    .css({ display: "flex", "flex-direction": "row", gap: "3px" })
     .append(
-      $('<div/>', { class: 'diff-stats-group' }).append(
-        $('<span/>', {
-          class: 'gl-text-gray-500 bold',
+      $("<div/>", { class: "diff-stats-group" }).append(
+        $("<span/>", {
+          class: "gl-text-gray-500 bold",
           text: `${fileCount} files`,
         }),
       ),
 
-      $('<div/>', {
-        class: 'diff-stats-group gl-display-flex gl-align-items-center bold',
+      $("<div/>", {
+        class: "diff-stats-group gl-display-flex gl-align-items-center bold",
       })
         .css({
-          color: 'var(--gl-color-green-600)',
+          color: "var(--gl-color-green-600)",
         })
-        .append($('<span/>').text('+'), $('<span/>').text(`${addLineCount}`)),
+        .append($("<span/>").text("+"), $("<span/>").text(`${addLineCount}`)),
 
-      $('<div/>', {
-        class: 'diff-stats-group gl-display-flex gl-align-items-center bold',
+      $("<div/>", {
+        class: "diff-stats-group gl-display-flex gl-align-items-center bold",
       })
         .css({
-          color: 'var(--gl-color-red-600)',
+          color: "var(--gl-color-red-600)",
         })
-        .append($('<span/>').text('-'), $('<span/>').text(`${deleteLinCount}`)),
+        .append($("<span/>").text("-"), $("<span/>").text(`${deleteLinCount}`)),
     )
     .prependTo(element);
 }
 
-function createIssueCardMergeRequestInfo(
-  element: HTMLElement,
-  opened: number,
-  total: number,
-) {
-  const inline = $('<span/>').appendTo(element);
+function createIssueCardMergeRequestInfo(element: HTMLElement, opened: number, total: number) {
+  const inline = $("<span/>").appendTo(element);
 
-  $('<div/>', {
+  $("<div/>", {
     class:
-      'issue-milestone-details gl-flex gl-max-w-15 gl-gap-2 gl-mr-3 gl-inline-flex gl-max-w-15 gl-cursor-help gl-items-center gl-align-bottom gl-text-sm gl-text-gray-500',
+      "issue-milestone-details gl-flex gl-max-w-15 gl-gap-2 gl-mr-3 gl-inline-flex gl-max-w-15 gl-cursor-help gl-items-center gl-align-bottom gl-text-sm gl-text-gray-500",
   })
     .append(
-      $('<span/>', {
-        title: 'Merge requests',
+      $("<span/>", {
+        title: "Merge requests",
       })
         .css({
-          'font-family': 'SauceCodePro Mono',
-          'font-size': '1.1rem',
+          "font-family": "SauceCodePro Mono",
+          "font-size": "1.1rem",
         })
-        .text('\ue726'),
+        .text("\uE726"),
 
-      $('<span/>', {
-        class: 'gl-inline-block gl-truncate gl-font-bold',
-      }).text(total === 0 ? '-/-' : `${total - opened}/${total}`),
+      $("<span/>", {
+        class: "gl-inline-block gl-truncate gl-font-bold",
+      }).text(total === 0 ? "-/-" : `${total - opened}/${total}`),
     )
     .appendTo(inline);
 }
@@ -247,70 +227,70 @@ function createIssueCardIterationInfo(element: HTMLElement, rollover: number) {
   if (rollover < 1) {
     return;
   }
-  const inline = $('<span/>').appendTo(element);
-  $('<div/>', {
+  const inline = $("<span/>").appendTo(element);
+  $("<div/>", {
     class:
-      'issue-milestone-details gl-flex gl-max-w-15 gl-gap-2 gl-mr-3 gl-inline-flex gl-max-w-15 gl-cursor-help gl-items-center gl-align-bottom gl-text-sm gl-text-gray-500',
+      "issue-milestone-details gl-flex gl-max-w-15 gl-gap-2 gl-mr-3 gl-inline-flex gl-max-w-15 gl-cursor-help gl-items-center gl-align-bottom gl-text-sm gl-text-gray-500",
   })
     .append(
-      $('<span/>', {
-        class: 'gl-inline-block gl-truncate gl-font-bold',
+      $("<span/>", {
+        class: "gl-inline-block gl-truncate gl-font-bold",
       }).text(`🔄×${rollover}`),
     )
     .appendTo(inline);
 }
 
 const createOpenModalButton = (url: string) => {
-  return $('<button/>', { class: 'btn btn-default btn-sm gl-button' })
+  return $("<button/>", { class: "btn btn-default btn-sm gl-button" })
     .css({
-      'font-family': 'SauceCodePro Mono',
+      "font-family": "SauceCodePro Mono",
     })
-    .text('\uf08e')
-    .on('click', e => {
+    .text("\uF08E")
+    .on("click", (e) => {
       e.stopPropagation();
       openModal(url);
     });
 };
 
 export const openModal = (url: string) => {
-  let modal = $('#gitlab-booster-modal');
+  let modal = $("#gitlab-booster-modal");
 
-  if (!modal.length) {
+  if (modal.length === 0) {
     // Create the modal only if it doesn't exist
-    const modalContent = $('<div/>', { class: 'modal-content' }).append(
-      $('<header/>', { class: 'modal-header' }).append(
-        $('<h2/>', { textContent: 'Quick preview' }),
-        $('<button/>', {
+    const modalContent = $("<div/>", { class: "modal-content" }).append(
+      $("<header/>", { class: "modal-header" }).append(
+        $("<h2/>", { textContent: "Quick preview" }),
+        $("<button/>", {
           class:
-            'btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close',
+            "btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close",
         })
-          .append($('<span/>').text('Close Modal'))
-          .on('click', () => {
+          .append($("<span/>").text("Close Modal"))
+          .on("click", () => {
             modal.hide();
           }),
       ),
     );
 
-    modal = $('<div/>', {
-      id: 'gitlab-booster-modal',
-      class: 'modal fade show gl-modal',
+    modal = $("<div/>", {
+      id: "gitlab-booster-modal",
+      class: "modal fade show gl-modal",
     })
       .append(
-        $('<div/>', { class: 'modal-dialog modal-lg' })
-          .css({ 'max-width': '80vw' })
+        $("<div/>", { class: "modal-dialog modal-lg" })
+          .css({ "max-width": "80vw" })
           .append(modalContent),
       )
-      .appendTo($('body'));
+      .appendTo($("body"));
 
-    GM_addElement(modalContent[0], 'iframe', {
-      id: 'issue-booster',
-      className: 'modal-body',
-      // @ts-ignore // typing says style is readonly
-      style: 'height: 80vh;',
+    GM_addElement(modalContent[0], "iframe", {
+      id: "issue-booster",
+      className: "modal-body",
+      // @ts-expect-error // typing says style is readonly
+      style: "height: 80vh;",
     });
   }
 
-  const iframe = modal.find('#issue-booster')[0] as HTMLIFrameElement;
+  const iframe = modal.find("#issue-booster")[0] as HTMLIFrameElement;
   if (iframe && iframe.src !== url) {
     iframe.src = url;
   }
@@ -322,19 +302,14 @@ export const openModal = (url: string) => {
 // Data process
 //
 
-const getUser = async () => {
-  return fetchGitLabData<User>(getApiUrl('/user'));
+const getUser = () => {
+  return fetchGitLabData<User>(getApiUrl("/user"));
 };
 
-async function addMergeRequestThreadMeta(
-  element: HTMLElement,
-  mergeRequestUrl: string,
-) {
+async function addMergeRequestThreadMeta(element: HTMLElement, mergeRequestUrl: string) {
   // Fetch unresolved threads from GitLab API
   const discussions =
-    (await fetchGitLabData<MergeRequestDiscussion[]>(
-      `${mergeRequestUrl}/discussions.json`,
-    )) ?? [];
+    (await fetchGitLabData<MergeRequestDiscussion[]>(`${mergeRequestUrl}/discussions.json`)) ?? [];
 
   let resolvable = 0;
   let resolved = 0;
@@ -348,9 +323,7 @@ async function addMergeRequestThreadMeta(
     }
   }
 
-  const listItem = await fetchGitLabData<MergeRequestListItem>(
-    `${mergeRequestUrl}.json`,
-  );
+  const listItem = await fetchGitLabData<MergeRequestListItem>(`${mergeRequestUrl}.json`);
 
   if (!currentUser) {
     currentUser = await getUser();
@@ -380,18 +353,13 @@ async function addMergeRequestThreadMeta(
 
       const isUserAuthor = mergeRequest.author.id === userId;
       const isUserReviewer =
-        mergeRequest.assignees.some(user => user.id === userId) ||
-        mergeRequest.reviewers.some(user => user.id === userId);
+        mergeRequest.assignees.some((user) => user.id === userId) ||
+        mergeRequest.reviewers.some((user) => user.id === userId);
 
       if (isUserAuthor) {
         renderFallback = false;
         for (const discusstion of discussions) {
-          if (
-            discusstion.resolvable &&
-            !discusstion.resolved &&
-            discusstion.notes.length > 0
-          ) {
-            // biome-ignore lint: cannot be empty
+          if (discusstion.resolvable && !discusstion.resolved && discusstion.notes.length > 0) {
             if (discusstion.notes.at(-1)!.author.id === userId) {
               action.waitForTheirsCount += 1;
             } else {
@@ -409,17 +377,14 @@ async function addMergeRequestThreadMeta(
           if (
             discusstion.resolvable &&
             !discusstion.resolved &&
-            discusstion.notes.length > 0
+            discusstion.notes.length > 0 &&
+            discusstion.notes.at(0)!.author.id === userId
           ) {
-            // biome-ignore lint: cannot be empty
-            if (discusstion.notes.at(0)!.author.id === userId) {
-              action.needUserReview = false;
-              // biome-ignore lint: cannot be empty
-              if (discusstion.notes.at(-1)!.author.id === userId) {
-                action.waitForTheirsCount += 1;
-              } else {
-                action.waitForOursCount += 1;
-              }
+            action.needUserReview = false;
+            if (discusstion.notes.at(-1)!.author.id === userId) {
+              action.waitForTheirsCount += 1;
+            } else {
+              action.waitForOursCount += 1;
             }
           }
 
@@ -427,8 +392,7 @@ async function addMergeRequestThreadMeta(
             const note = discusstion.notes[0];
 
             if (
-              (note.note === 'requested changes' ||
-                note.note === 'approved this merge request') &&
+              (note.note === "requested changes" || note.note === "approved this merge request") &&
               note.author.id === userId
             ) {
               action.needUserReview = false;
@@ -436,10 +400,7 @@ async function addMergeRequestThreadMeta(
           }
 
           action.otherUnresolvedCount =
-            resolvable -
-            resolved -
-            action.waitForTheirsCount -
-            action.waitForOursCount;
+            resolvable - resolved - action.waitForTheirsCount - action.waitForOursCount;
         }
 
         createThreadActionBadges(element, action);
@@ -452,36 +413,33 @@ async function addMergeRequestThreadMeta(
   }
 
   if (resolvable > resolved) {
-    createThreadsBadge(element, 'danger', resolved, resolvable);
+    createThreadsBadge(element, "danger", resolved, resolvable);
   } else if (resolved === resolvable && resolvable > 0) {
-    createThreadsBadge(element, 'success', resolved, resolvable);
+    createThreadsBadge(element, "success", resolved, resolvable);
   }
 }
 
-async function addMergeRequestDiffMeta(
-  element: HTMLElement,
-  mergeRequestUrl: string,
-) {
-  const diffsMeta = await fetchGitLabData<DiffsMeta>(
-    `${mergeRequestUrl}/diffs_metadata.json`,
-  );
+async function addMergeRequestDiffMeta(element: HTMLElement, mergeRequestUrl: string) {
+  const diffsMeta = await fetchGitLabData<DiffsMeta>(`${mergeRequestUrl}/diffs_metadata.json`);
 
   if (!diffsMeta) {
     return;
   }
 
-  const { addedLineCount, deleteLinCount, fileCount } =
-    dehydrateDiff(diffsMeta);
+  const { addedLineCount, deleteLinCount, fileCount } = dehydrateDiff(diffsMeta);
 
   createDiffStat(element, fileCount, addedLineCount, deleteLinCount);
 }
 
 function dehydrateDiff(diffsMeta: DiffsMeta) {
   const excludeRegexps = [
-    /\.po$/, // translation files
-    /mocks/, // mocks
-    /(spec|test)\.\w+$/, // tests
-    /package-lock.json/, // auto generated files
+    // translation files
+    /\.po$/u,
+    /mocks/u,
+    // tests
+    /(spec|test)\.\w+$/u,
+    // auto generated files
+    /package-lock.json/u,
   ];
 
   let addedLineCount = 0;
@@ -511,19 +469,19 @@ function dehydrateDiff(diffsMeta: DiffsMeta) {
 //
 
 // Function to enhance the merge request list with unresolved threads
-async function enhanceMergeRequestList() {
-  const mergeRequests = document.querySelectorAll('.merge-request');
+function enhanceMergeRequestList() {
+  const mergeRequests = document.querySelectorAll(".merge-request");
 
   for (const mergeRequest of mergeRequests) {
     const mergeRequestUrl = mergeRequest.querySelector<HTMLAnchorElement>(
-      '.merge-request-title-text a',
+      ".merge-request-title-text a",
     )?.href;
 
     if (!mergeRequestUrl) {
       continue;
     }
 
-    const metaList = $(mergeRequest).find('.issuable-meta ul, ul.controls')[0];
+    const metaList = $(mergeRequest).find(".issuable-meta ul, ul.controls")[0];
 
     addMergeRequestThreadMeta(metaList, mergeRequestUrl);
     addMergeRequestDiffMeta(metaList, mergeRequestUrl);
@@ -537,26 +495,24 @@ async function enhanceMergeRequestList() {
   }
 }
 
-async function enhanceMergeRequestDetailPage() {
-  const reviewerPanel = document.querySelector('.block.reviewer');
+const getTitle = () => {
+  return document.querySelector<HTMLElement>("h1.title")?.innerText ?? "";
+};
 
-  const getTitle = () => {
-    return document.querySelector<HTMLElement>('h1.title')?.innerText ?? '';
-  };
+function enhanceMergeRequestDetailPage() {
+  const reviewerPanel = document.querySelector(".block.reviewer");
+
   const title = getTitle();
 
-  const csrfToken = document.querySelector<HTMLMetaElement>(
-    'meta[name="csrf-token"]',
-  )?.content;
+  const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
 
-  const mrisDraft =
-    title.length > 0 && title.toLowerCase().startsWith('draft:');
+  const mrisDraft = title.length > 0 && title.toLowerCase().startsWith("draft:");
 
   if (!reviewerPanel) {
     return;
   }
 
-  const convertButton = reviewerPanel.querySelector('#convert-to-draft-button');
+  const convertButton = reviewerPanel.querySelector("#convert-to-draft-button");
 
   if (mrisDraft && convertButton) {
     convertButton.remove();
@@ -564,49 +520,39 @@ async function enhanceMergeRequestDetailPage() {
   }
 
   if (!mrisDraft && !convertButton && csrfToken) {
-    const $description = $(/* HTML */ `
+    // HTML
+    const $description = $(`
       <div
         id="convert-to-draft-button"
         class="gl-flex"
         style="padding-top: 1rem; align-items: center"
       >
-        <span class="gl-mb-0 gl-inline-block gl-text-sm gl-text-subtle"
-          >Still in progress?</span
-        >
-        <button
-          class="gl-ml-2 !gl-text-sm btn gl-button btn-confirm btn-sm btn-confirm-tertiary"
-        >
-          <span class="gl-button-text" style="font-size: 0.7rem;"
-            >Convert to draft</span
-          >
+        <span class="gl-mb-0 gl-inline-block gl-text-sm gl-text-subtle">Still in progress?</span>
+        <button class="gl-ml-2 !gl-text-sm btn gl-button btn-confirm btn-sm btn-confirm-tertiary">
+          <span class="gl-button-text" style="font-size: 0.7rem;">Convert to draft</span>
         </button>
       </div>
     `);
 
-    $description.find('.gl-button').on('click', async () => {
-      const urlMatch = window.location.pathname.match(
-        /\/(.+)\/-\/merge_requests\/(\d+)/,
-      );
+    $description.find(".gl-button").on("click", async () => {
+      const urlMatch = window.location.pathname.match(/\/(.+)\/-\/merge_requests\/(\d+)/u);
 
       if (!urlMatch) {
-        console.error('Could not parse MR URL');
+        console.error("Could not parse MR URL");
         return;
       }
 
       const projectPath = urlMatch[1];
       const mrIid = urlMatch[2];
-      const title = getTitle();
       await fetch(
-        getApiUrl(
-          `/projects/${encodeURIComponent(projectPath)}/merge_requests/${mrIid}`,
-        ),
+        getApiUrl(`/projects/${encodeURIComponent(projectPath)}/merge_requests/${mrIid}`),
         {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken,
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
           },
-          body: JSON.stringify({ title: `Draft: ${title}` }),
+          body: JSON.stringify({ title: `Draft: ${getTitle()}` }),
         },
       );
       window.location.reload();
@@ -617,26 +563,20 @@ async function enhanceMergeRequestDetailPage() {
 }
 
 // Function to enhance the issue detail page with related project names of merge requests
-async function enhanceIssueDetailPage() {
+function enhanceIssueDetailPage() {
   // select related items and exclude related issue
   // need to wait for the list to show up as the issue page loads first then loads the related merge request asynchronously
   waitForKeyElements(
-    '#developmentitems > div.crud-body > div > ul > li',
+    "#developmentitems > div.crud-body > div > ul > li",
     (mergeRequest: Element) => {
       (async () => {
-        console.debug(
-          'inserting merge request meta to related merge requests',
-          mergeRequest,
-        );
+        console.debug("inserting merge request meta to related merge requests", mergeRequest);
 
-        const statusBadge = mergeRequest.querySelector(
-          'div.item-meta span.gl-badge-content',
-        );
+        const statusBadge = mergeRequest.querySelector("div.item-meta span.gl-badge-content");
 
-        const mergeRequestStatus = statusBadge?.textContent ?? 'opened';
+        const mergeRequestStatus = statusBadge?.textContent ?? "opened";
 
-        const mergeRequestAnchor =
-          mergeRequest.querySelector<HTMLAnchorElement>('.item-title a');
+        const mergeRequestAnchor = mergeRequest.querySelector<HTMLAnchorElement>(".item-title a");
 
         const mergeRequestUrl = mergeRequestAnchor?.href;
 
@@ -645,23 +585,23 @@ async function enhanceIssueDetailPage() {
         }
 
         switch (mergeRequestStatus?.trim().toLowerCase()) {
-          case 'merged': {
+          case "merged": {
             break;
           }
 
-          case 'closed': {
+          case "closed": {
             $(mergeRequestAnchor).css({
-              'text-decoration': 'line-through',
+              "text-decoration": "line-through",
             });
             $(mergeRequest).css({
-              filter: 'grayscale(1)',
+              filter: "grayscale(1)",
             });
             // no need to show the closed details
             return;
           }
           default: {
             $(mergeRequestAnchor).css({
-              color: 'var(--primary)',
+              color: "var(--primary)",
             });
           }
         }
@@ -674,9 +614,7 @@ async function enhanceIssueDetailPage() {
           return;
         }
 
-        const metaDiv = mergeRequest.querySelector<HTMLElement>(
-          '.item-meta .item-attributes-area',
-        );
+        const metaDiv = mergeRequest.querySelector<HTMLElement>(".item-meta .item-attributes-area");
 
         if (!metaDiv) {
           return;
@@ -684,33 +622,27 @@ async function enhanceIssueDetailPage() {
 
         createOpenModalButton(mergeRequestUrl).appendTo(metaDiv);
 
-        if (mergeRequestStatus === 'opened') {
+        if (mergeRequestStatus === "opened") {
           await addMergeRequestThreadMeta(metaDiv, mergeRequestUrl);
 
           await addMergeRequestDiffMeta(metaDiv, mergeRequestUrl);
         }
 
-        $('<span/>').text(diffsMeta.project_path).prependTo(metaDiv);
+        $("<span/>").text(diffsMeta.project_path).prependTo(metaDiv);
       })();
     },
     true,
   );
 }
 
-const enhanceIssueCard: MutationCallback = async (
-  mutationList: MutationRecord[],
-) => {
+const enhanceIssueCard: MutationCallback = async (mutationList: MutationRecord[]) => {
   for (const mutation of mutationList) {
-    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+    if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
       for (const node of mutation.addedNodes) {
-        if (node instanceof Element && node.matches('li.board-card')) {
-          const issueUrl = node.querySelector<HTMLAnchorElement>(
-            'h3.board-card-title > a',
-          )?.href;
+        if (node instanceof Element && node.matches("li.board-card")) {
+          const issueUrl = node.querySelector<HTMLAnchorElement>("h3.board-card-title > a")?.href;
 
-          const infoItems = node.querySelector<HTMLElement>(
-            'span.board-info-items',
-          );
+          const infoItems = node.querySelector<HTMLElement>("span.board-info-items");
 
           if (!issueUrl || !infoItems) {
             continue;
@@ -723,15 +655,13 @@ const enhanceIssueCard: MutationCallback = async (
           // Collect merge requests for the issue
           const relatedMergeRequest =
             (await fetchGitLabData<MergeRequest[]>(
-              getApiUrl(
-                `/projects/${issue.project_id}/issues/${issue.iid}/related_merge_requests`,
-              ),
+              getApiUrl(`/projects/${issue.project_id}/issues/${issue.iid}/related_merge_requests`),
             )) ?? [];
 
           const total = relatedMergeRequest.length;
 
           const opened = relatedMergeRequest.filter(
-            mergeRequest => mergeRequest.state === 'opened',
+            (mergeRequest) => mergeRequest.state === "opened",
           ).length;
 
           createIssueCardMergeRequestInfo(infoItems, opened, total);
@@ -746,14 +676,13 @@ const enhanceIssueCard: MutationCallback = async (
 
           createIssueCardIterationInfo(
             infoItems,
-            iterationEvents.filter(event => event.action === 'add').length - 1,
+            iterationEvents.filter((event) => event.action === "add").length - 1,
           );
         }
       }
-    } else if (mutation.type === 'attributes') {
+    } else if (mutation.type === "attributes") {
     }
   }
-  return;
 };
 
 const observer = new MutationObserver(enhanceIssueCard);
@@ -761,7 +690,7 @@ const observer = new MutationObserver(enhanceIssueCard);
 const enhanceIssueBoard = () => {
   observer.disconnect();
 
-  const boardElement = document.querySelector('.boards-list');
+  const boardElement = document.querySelector(".boards-list");
   if (!boardElement) {
     return;
   }
@@ -777,14 +706,14 @@ const enhanceIssueBoard = () => {
 // Entry point
 //
 
-const issueDetailRegex = /\/issues\/\d+/;
+const issueDetailRegex = /\/issues\/\d+/u;
 
-const mergeRequestDetailRegex = /\/merge_requests\/(\d+)/;
+const mergeRequestDetailRegex = /\/merge_requests\/(\d+)/u;
 
-const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/;
+const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/u;
 
 // When the board is the only board in the repo, the url is `/boards`
-const issueBoardRegex = /\/boards(?:\/\d+)?(?:\/)?(?:\?|$)/;
+const issueBoardRegex = /\/boards(?:\/\d+)?(?:\/)?(?:\?|$)/u;
 
 const enhance = () => {
   if (mergeRequestListRegex.test(window.location.href)) {
@@ -804,10 +733,10 @@ const enhance = () => {
   }
 };
 // Run the script when the DOM is fully loaded
-window.onload = enhance;
+window.addEventListener("load", enhance);
 // Run the script when the URL is changed
 
 if (window.onurlchange === null) {
   // feature is supported
-  window.addEventListener('urlchange', enhance);
+  window.addEventListener("urlchange", enhance);
 }

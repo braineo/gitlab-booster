@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-10-27
+
+### 🚀 Features
+
+- Restyle injected UI to match GitLab
+
+### 🐛 Bug Fixes
+
+- Stop adding side panel for epic list
+- Restore board card info on latest GitLab
+- Harden API calls and match latest GitLab URLs
+
+### 🚜 Refactor
+
+- Remove existing features converted by gitlab v19
+- Apply strict oxlint fixes and oxfmt formatting
+
+### 📚 Documentation
+
+- Refresh README features and screenshots from gitlab.com
+
+### ⚙️ Miscellaneous Tasks
+
+- Migrate to oxlint, oxfmt and TypeScript 7
+
 ## [1.5.2] - 2025-11-21
 
 ### 🐛 Bug Fixes

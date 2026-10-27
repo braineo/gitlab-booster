@@ -2,11 +2,6 @@ import { GM_addElement } from "$";
 import $ from "jquery";
 import { waitForKeyElements } from "./waitForKeyElements";
 
-GM_addElement("link", {
-  rel: "stylesheet",
-  href: "https://cdn.jsdelivr.net/npm/nf-sauce-code-pro@2.1.3/nf-font.min.css",
-});
-
 //
 // Types
 //
@@ -108,65 +103,76 @@ let currentUserPromise: Promise<User | null> | undefined;
 // Element manipulation
 //
 
+// reuse GitLab's own icon sprite so injected icons match the native UI
+const createIcon = (name: string, className = "", size = 14) => {
+  const sprite =
+    document.querySelector('svg use[href*=".svg#"]')?.getAttribute("href")?.split("#")[0] ?? "";
+  return $(
+    `<svg class="gl-icon s${size} ${className}" aria-hidden="true"><use href="${sprite}#${name}"></use></svg>`,
+  );
+};
+
+// inline layout: GitLab only ships the utility classes it uses itself, so `gl-gap-*` may not exist
+const inlineRow = (gap: string) => ({ display: "inline-flex", "align-items": "center", gap });
+
+const createBadge = (icon: string, title: string, text: string, variant: string) => {
+  return $("<span/>", {
+    title,
+    "aria-label": title,
+    class: `gl-badge badge badge-pill badge-${variant} has-tooltip`,
+  }).append(createIcon(icon, "gl-badge-icon"), $("<span/>", { class: "gl-badge-content", text }));
+};
+
+const createMetaItem = (element: HTMLElement) => {
+  return $("<li/>", { class: "issuable-comments" }).css(inlineRow("0.25rem")).prependTo(element);
+};
+
 function createThreadsBadge(
   element: HTMLElement,
-  badgeClassName: string,
+  variant: string,
   resolved: number,
   resolvable: number,
 ) {
-  const li = $("<li/>").addClass("issuable-comments d-none d-sm-flex").prependTo(element);
-
-  $("<span/>")
-    .addClass(`gl-badge badge badge-pill badge-${badgeClassName} sm has-tooltip`)
-    .text(`${resolved}/${resolvable} threads resolved`)
-    .prependTo(li);
+  createBadge(
+    "comments",
+    `${resolved} of ${resolvable} threads resolved`,
+    `${resolved}/${resolvable}`,
+    variant,
+  ).appendTo(createMetaItem(element));
 }
 
-const createIconText = (icon: string, title: string, text?: string, badgeClassName?: string) => {
-  return $("<span/>", {
-    title,
-    class: `gl-badge badge badge-pill ${
-      badgeClassName ? `badge-${badgeClassName}` : ""
-    } sm has-tooltip`,
-  })
-    .css({
-      "font-family": "SauceCodePro Mono",
-    })
-    .text(`${icon} ${text ?? ""}`);
-};
-
 function createThreadActionBadges(element: HTMLElement, action: MergeRequestThreadAction) {
-  const li = $("<li/>").addClass("issuable-comments d-none d-sm-flex").prependTo(element);
+  const li = createMetaItem(element);
+
+  if (action.needUserReview) {
+    createBadge("eye", "Needs your review", "Review", "danger").appendTo(li);
+  }
 
   if (action.waitForOursCount) {
-    createIconText(
-      "\uF063",
-      "need your response",
+    createBadge(
+      "comment-dots",
+      "Threads waiting for your response",
       action.waitForOursCount.toString(),
       "danger",
-    ).prependTo(li);
+    ).appendTo(li);
   }
 
   if (action.waitForTheirsCount) {
-    createIconText(
-      "\uF062",
-      "wait for response",
+    createBadge(
+      "hourglass",
+      "Threads waiting for their response",
       action.waitForTheirsCount.toString(),
-      "muted",
-    ).prependTo(li);
+      "neutral",
+    ).appendTo(li);
   }
 
   if (action.otherUnresolvedCount) {
-    createIconText(
-      "\uF0E5",
-      "other threads",
+    createBadge(
+      "comments",
+      "Other unresolved threads",
       action.otherUnresolvedCount.toString(),
       "warning",
-    ).prependTo(li);
-  }
-
-  if (action.needUserReview) {
-    createIconText("\uF256", "need your review", undefined, "danger").prependTo(li);
+    ).appendTo(li);
   }
 }
 
@@ -176,82 +182,59 @@ function createDiffStat(
   addLineCount: number,
   deleteLinCount: number,
 ) {
-  $("<div/>")
-    .css({ display: "flex", "flex-direction": "row", gap: "3px" })
+  $("<li/>", {
+    class: "gl-text-subtle",
+    title: `${fileCount} files changed, excluding tests, mocks, translations and lock files`,
+  })
+    // match the 12px MR reference text next to it
+    .css({ ...inlineRow("0.5rem"), "font-size": "0.75rem", "font-variant-numeric": "tabular-nums" })
     .append(
-      $("<div/>", { class: "diff-stats-group" }).append(
-        $("<span/>", {
-          class: "gl-text-gray-500 bold",
-          text: `${fileCount} files`,
-        }),
-      ),
-
-      $("<div/>", {
-        class: "diff-stats-group gl-display-flex gl-align-items-center bold",
-      })
-        .css({
-          color: "var(--gl-color-green-600)",
-        })
-        .append($("<span/>").text("+"), $("<span/>").text(`${addLineCount}`)),
-
-      $("<div/>", {
-        class: "diff-stats-group gl-display-flex gl-align-items-center bold",
-      })
-        .css({
-          color: "var(--gl-color-red-600)",
-        })
-        .append($("<span/>").text("-"), $("<span/>").text(`${deleteLinCount}`)),
+      $("<span/>")
+        .css(inlineRow("0.125rem"))
+        .append(createIcon("doc-changes", "", 12), $("<span/>", { text: fileCount })),
+      $("<span/>", { class: "gl-text-success", text: `+${addLineCount}` }),
+      $("<span/>", { class: "gl-text-danger", text: `−${deleteLinCount}` }),
     )
     .prependTo(element);
 }
 
-function createIssueCardMergeRequestInfo(element: HTMLElement, opened: number, total: number) {
-  const inline = $("<span/>").appendTo(element);
-
-  $("<div/>", {
-    class:
-      "issue-milestone-details gl-flex gl-max-w-15 gl-gap-2 gl-mr-3 gl-inline-flex gl-max-w-15 gl-cursor-help gl-items-center gl-align-bottom gl-text-sm gl-text-gray-500",
+const createBoardCardInfo = (element: HTMLElement, icon: string, title: string, text: string) => {
+  $("<span/>", {
+    title,
+    class: "board-card-info gl-cursor-help gl-align-bottom gl-text-subtle",
   })
+    .css({ ...inlineRow("0.25rem"), "font-size": "0.75rem" })
     .append(
-      $("<span/>", {
-        title: "Merge requests",
-      })
-        .css({
-          "font-family": "SauceCodePro Mono",
-          "font-size": "1.1rem",
-        })
-        .text("\uE726"),
-
-      $("<span/>", {
-        class: "gl-inline-block gl-truncate gl-font-bold",
-      }).text(total === 0 ? "-/-" : `${total - opened}/${total}`),
+      createIcon(icon, "board-card-info-icon"),
+      $("<span/>", { class: "board-card-info-text", text }),
     )
-    .appendTo(inline);
+    .appendTo(element);
+};
+
+function createIssueCardMergeRequestInfo(element: HTMLElement, opened: number, total: number) {
+  createBoardCardInfo(
+    element,
+    "merge-request",
+    "Closed / total related merge requests",
+    total === 0 ? "-/-" : `${total - opened}/${total}`,
+  );
 }
 
 function createIssueCardIterationInfo(element: HTMLElement, rollover: number) {
   if (rollover < 1) {
     return;
   }
-  const inline = $("<span/>").appendTo(element);
-  $("<div/>", {
-    class:
-      "issue-milestone-details gl-flex gl-max-w-15 gl-gap-2 gl-mr-3 gl-inline-flex gl-max-w-15 gl-cursor-help gl-items-center gl-align-bottom gl-text-sm gl-text-gray-500",
-  })
-    .append(
-      $("<span/>", {
-        class: "gl-inline-block gl-truncate gl-font-bold",
-      }).text(`🔄×${rollover}`),
-    )
-    .appendTo(inline);
+  createBoardCardInfo(element, "retry", "Iteration rollovers", `×${rollover}`);
 }
 
 const createOpenModalButton = (url: string) => {
-  return $("<button/>", { class: "btn btn-default btn-sm gl-button" })
-    .css({
-      "font-family": "SauceCodePro Mono",
-    })
-    .text("\uF08E")
+  return $("<button/>", {
+    type: "button",
+    title: "Quick preview",
+    "aria-label": "Quick preview",
+    class: "btn btn-default btn-sm gl-button btn-default-tertiary btn-icon has-tooltip",
+  })
+    .append(createIcon("external-link", "gl-button-icon"))
     .on("click", (e) => {
       e.stopPropagation();
       openModal(url);
@@ -263,14 +246,18 @@ export const openModal = (url: string) => {
 
   if (modal.length === 0) {
     // Create the modal only if it doesn't exist
-    const modalContent = $("<div/>", { class: "modal-content" }).append(
+    const modalContent = $("<div/>", {
+      class: "modal-content gl-overflow-hidden gl-rounded-lg gl-shadow-lg",
+    }).append(
       $("<header/>", { class: "modal-header" }).append(
-        $("<h2/>", { textContent: "Quick preview" }),
+        $("<h2/>", { class: "modal-title gl-text-size-h2", text: "Quick preview" }),
         $("<button/>", {
-          class:
-            "btn btn-default btn-md gl-button btn-close js-note-target-close btn-comment btn-comment-and-close",
+          type: "button",
+          title: "Close",
+          "aria-label": "Close",
+          class: "btn btn-default btn-sm gl-button btn-default-tertiary btn-icon",
         })
-          .append($("<span/>").text("Close Modal"))
+          .append(createIcon("close", "gl-button-icon"))
           .on("click", () => {
             modal.hide();
           }),
@@ -279,20 +266,35 @@ export const openModal = (url: string) => {
 
     modal = $("<div/>", {
       id: "gitlab-booster-modal",
-      class: "modal fade show gl-modal",
+      class: "modal gl-modal",
+      role: "dialog",
+      "aria-modal": "true",
     })
+      .css({ background: "rgba(0, 0, 0, 0.5)" })
       .append(
-        $("<div/>", { class: "modal-dialog modal-lg" })
-          .css({ "max-width": "80vw" })
+        $("<div/>", { class: "modal-dialog modal-dialog-centered" })
+          .css({ "max-width": "min(80vw, 1400px)" })
           .append(modalContent),
       )
+      // close when clicking the backdrop
+      .on("click", (e) => {
+        if (e.target === modal[0]) {
+          modal.hide();
+        }
+      })
       .appendTo($("body"));
+
+    $(document).on("keydown", (e) => {
+      if (e.key === "Escape") {
+        modal.hide();
+      }
+    });
 
     GM_addElement(modalContent[0], "iframe", {
       id: "issue-booster",
-      className: "modal-body",
+      className: "modal-body gl-p-0 gl-border-0",
       // @ts-expect-error // typing says style is readonly
-      style: "height: 80vh;",
+      style: "height: 80vh; width: 100%;",
     });
   }
 
@@ -312,7 +314,12 @@ const getUser = () => {
   return fetchGitLabData<User>(getApiUrl("/user"));
 };
 
-async function addMergeRequestThreadMeta(element: HTMLElement, mergeRequestUrl: string) {
+async function addMergeRequestThreadMeta(
+  element: HTMLElement,
+  mergeRequestUrl: string,
+  // the MR list already shows GitLab's own "x of y" thread count
+  showResolvedCount = true,
+) {
   // Fetch unresolved threads from GitLab API
   const discussions =
     (await fetchGitLabData<MergeRequestDiscussion[]>(`${mergeRequestUrl}/discussions.json`)) ?? [];
@@ -413,12 +420,12 @@ async function addMergeRequestThreadMeta(element: HTMLElement, mergeRequestUrl: 
     }
   }
 
-  if (!renderFallback) {
+  if (!renderFallback || !showResolvedCount) {
     return;
   }
 
   if (resolvable > resolved) {
-    createThreadsBadge(element, "danger", resolved, resolvable);
+    createThreadsBadge(element, "warning", resolved, resolvable);
   } else if (resolved === resolvable && resolvable > 0) {
     createThreadsBadge(element, "success", resolved, resolvable);
   }
@@ -489,15 +496,10 @@ function enhanceMergeRequestList() {
 
     const metaList = $(mergeRequest).find(".issuable-meta ul, ul.controls")[0];
 
-    addMergeRequestThreadMeta(metaList, mergeRequestUrl);
+    addMergeRequestThreadMeta(metaList, mergeRequestUrl, false);
     addMergeRequestDiffMeta(metaList, mergeRequestUrl);
 
-    createOpenModalButton(mergeRequestUrl)
-      .css({
-        paddingTop: 0,
-        paddingBottom: 0,
-      })
-      .appendTo(metaList);
+    createOpenModalButton(mergeRequestUrl).appendTo($("<li/>").appendTo(metaList));
   }
 }
 
@@ -528,14 +530,10 @@ function enhanceMergeRequestDetailPage() {
   if (!mrisDraft && !convertButton && csrfToken) {
     // HTML
     const $description = $(`
-      <div
-        id="convert-to-draft-button"
-        class="gl-flex"
-        style="padding-top: 1rem; align-items: center"
-      >
-        <span class="gl-mb-0 gl-inline-block gl-text-sm gl-text-subtle">Still in progress?</span>
-        <button class="gl-ml-2 !gl-text-sm btn gl-button btn-confirm btn-sm btn-confirm-tertiary">
-          <span class="gl-button-text" style="font-size: 0.7rem;">Convert to draft</span>
+      <div id="convert-to-draft-button" class="gl-flex gl-items-center gl-gap-2 gl-pt-3">
+        <span class="gl-text-sm gl-text-subtle">Still in progress?</span>
+        <button type="button" class="btn gl-button btn-confirm btn-sm btn-confirm-tertiary">
+          <span class="gl-button-text">Convert to draft</span>
         </button>
       </div>
     `);
@@ -579,7 +577,7 @@ function enhanceMergeRequestDetailPage() {
   }
 }
 
-// Function to enhance the issue detail page with related project names of merge requests
+// Function to enhance the issue detail page with related merge request meta
 function enhanceIssueDetailPage() {
   // select related items and exclude related issue
   // need to wait for the list to show up as the issue page loads first then loads the related merge request asynchronously
@@ -618,7 +616,7 @@ function enhanceIssueDetailPage() {
           }
           default: {
             $(mergeRequestAnchor).css({
-              color: "var(--primary)",
+              color: "var(--gl-text-color-link, #1f75cb)",
             });
           }
         }
@@ -637,16 +635,17 @@ function enhanceIssueDetailPage() {
           return;
         }
 
-        createOpenModalButton(mergeRequestUrl).appendTo(metaDiv);
+        // one container keeps our items together with even spacing, ahead of GitLab's own
+        const boosterMeta = $("<span/>").css(inlineRow("0.75rem")).prependTo(metaDiv)[0];
+
+        createOpenModalButton(mergeRequestUrl).appendTo(boosterMeta);
 
         if (mergeRequestStatus === "opened") {
-          await addMergeRequestThreadMeta(metaDiv, mergeRequestUrl);
+          await addMergeRequestThreadMeta(boosterMeta, mergeRequestUrl);
 
           const { addedLineCount, deleteLinCount, fileCount } = dehydrateDiff(diffsMeta);
-          createDiffStat(metaDiv, fileCount, addedLineCount, deleteLinCount);
+          createDiffStat(boosterMeta, fileCount, addedLineCount, deleteLinCount);
         }
-
-        $("<span/>").text(diffsMeta.project_path).prependTo(metaDiv);
       })();
     },
     true,

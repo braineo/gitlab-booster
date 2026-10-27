@@ -8,7 +8,6 @@ This add long missing features in the merge request list and issue detail.
 
 https://greasyfork.org/en/scripts/509169-gitlab-booster
 
-
 ### Self-hosted GitLab instances
 
 This is configurable in tampermonkey.
@@ -25,11 +24,11 @@ This is configurable in tampermonkey.
 
 ## Development
 
-This project uses `bun` and `biome` for trying them out.
+This project uses `bun`, `oxlint` and `oxfmt` for trying them out.
 
 For local development, run
 
-``` shell
+```shell
 bun install
 bun run dev
 ```

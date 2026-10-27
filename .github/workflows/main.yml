@@ -26,7 +26,9 @@ jobs:
       - name: Install Dependencies
         run: bun install --frozen-lockfile
       - name: run lint
-        run: bunx biome lint --error-on-warnings ./src
+        run: bunx oxlint --deny-warnings ./src
+      - name: check format
+        run: bunx oxfmt --check
 
   build:
     runs-on: ubuntu-latest

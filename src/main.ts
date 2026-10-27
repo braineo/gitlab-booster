@@ -86,17 +86,23 @@ const getApiUrl = (url: string): string => {
 };
 
 async function fetchGitLabData<T>(url: string): Promise<T | null> {
-  const response = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!response.ok) {
-    console.error("Failed to fetch GitLab data:", response.statusText);
+  try {
+    const response = await fetch(url, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+      console.error("Failed to fetch GitLab data:", response.statusText);
+      return null;
+    }
+    return await response.json();
+  } catch (error) {
+    // network error or non-JSON body (e.g. sign-in page)
+    console.error("Failed to fetch GitLab data:", error);
     return null;
   }
-  return await response.json();
 }
 
-let currentUser: User | null;
+let currentUserPromise: Promise<User | null> | undefined;
 
 //
 // Element manipulation
@@ -325,11 +331,10 @@ async function addMergeRequestThreadMeta(element: HTMLElement, mergeRequestUrl: 
 
   const listItem = await fetchGitLabData<MergeRequestListItem>(`${mergeRequestUrl}.json`);
 
-  if (!currentUser) {
-    currentUser = await getUser();
-  }
+  // share one request across all rows rendering in parallel
+  currentUserPromise ??= getUser();
 
-  const userId = currentUser?.id;
+  const userId = (await currentUserPromise)?.id;
 
   // render simple badge if cannot get the user or the merge request detail from API
   let renderFallback = true;
@@ -473,8 +478,9 @@ function enhanceMergeRequestList() {
   const mergeRequests = document.querySelectorAll(".merge-request");
 
   for (const mergeRequest of mergeRequests) {
+    // project lists on newer GitLab render the title as `a.issue-title-text`
     const mergeRequestUrl = mergeRequest.querySelector<HTMLAnchorElement>(
-      ".merge-request-title-text a",
+      ".merge-request-title-text a, a.issue-title-text",
     )?.href;
 
     if (!mergeRequestUrl) {
@@ -535,6 +541,13 @@ function enhanceMergeRequestDetailPage() {
     `);
 
     $description.find(".gl-button").on("click", async () => {
+      const currentTitle = getTitle();
+      // never overwrite the title with just the prefix
+      if (!currentTitle) {
+        console.error("Could not read MR title");
+        return;
+      }
+
       const urlMatch = window.location.pathname.match(/\/(.+)\/-\/merge_requests\/(\d+)/u);
 
       if (!urlMatch) {
@@ -544,7 +557,7 @@ function enhanceMergeRequestDetailPage() {
 
       const projectPath = urlMatch[1];
       const mrIid = urlMatch[2];
-      await fetch(
+      const response = await fetch(
         getApiUrl(`/projects/${encodeURIComponent(projectPath)}/merge_requests/${mrIid}`),
         {
           method: "PUT",
@@ -552,9 +565,13 @@ function enhanceMergeRequestDetailPage() {
             "Content-Type": "application/json",
             "X-CSRF-Token": csrfToken,
           },
-          body: JSON.stringify({ title: `Draft: ${getTitle()}` }),
+          body: JSON.stringify({ title: `Draft: ${currentTitle}` }),
         },
       );
+      if (!response.ok) {
+        console.error("Failed to convert to draft:", response.statusText);
+        return;
+      }
       window.location.reload();
     });
 
@@ -574,7 +591,7 @@ function enhanceIssueDetailPage() {
 
         const statusBadge = mergeRequest.querySelector("div.item-meta span.gl-badge-content");
 
-        const mergeRequestStatus = statusBadge?.textContent ?? "opened";
+        const mergeRequestStatus = (statusBadge?.textContent ?? "opened").trim().toLowerCase();
 
         const mergeRequestAnchor = mergeRequest.querySelector<HTMLAnchorElement>(".item-title a");
 
@@ -584,7 +601,7 @@ function enhanceIssueDetailPage() {
           return;
         }
 
-        switch (mergeRequestStatus?.trim().toLowerCase()) {
+        switch (mergeRequestStatus) {
           case "merged": {
             break;
           }
@@ -625,17 +642,63 @@ function enhanceIssueDetailPage() {
         if (mergeRequestStatus === "opened") {
           await addMergeRequestThreadMeta(metaDiv, mergeRequestUrl);
 
-          await addMergeRequestDiffMeta(metaDiv, mergeRequestUrl);
+          const { addedLineCount, deleteLinCount, fileCount } = dehydrateDiff(diffsMeta);
+          createDiffStat(metaDiv, fileCount, addedLineCount, deleteLinCount);
         }
 
         $("<span/>").text(diffsMeta.project_path).prependTo(metaDiv);
       })();
     },
     true,
+    300,
+    // stop after ~30s so issues without merge requests do not poll forever
+    100,
   );
 }
 
-const enhanceIssueCard: MutationCallback = async (mutationList: MutationRecord[]) => {
+async function addIssueCardInfo(node: Element) {
+  // GitLab now links cards to `/-/work_items/:iid`, which has no `.json` endpoint
+  const issueUrl = node
+    .querySelector<HTMLAnchorElement>("h3.board-card-title > a")
+    ?.href.replace("/-/work_items/", "/-/issues/");
+
+  const infoItems = node.querySelector<HTMLElement>(".board-info-items");
+
+  if (!issueUrl || !infoItems) {
+    return;
+  }
+
+  const issue = await fetchGitLabData<Issue>(`${issueUrl}.json`);
+  if (!issue) {
+    return;
+  }
+  // Collect merge requests for the issue
+  const relatedMergeRequest =
+    (await fetchGitLabData<MergeRequest[]>(
+      getApiUrl(`/projects/${issue.project_id}/issues/${issue.iid}/related_merge_requests`),
+    )) ?? [];
+
+  const total = relatedMergeRequest.length;
+
+  const opened = relatedMergeRequest.filter(
+    (mergeRequest) => mergeRequest.state === "opened",
+  ).length;
+
+  createIssueCardMergeRequestInfo(infoItems, opened, total);
+
+  // Collect rollover count for the issue
+  const iterationEvents =
+    (await fetchGitLabData<IterationEvent[]>(
+      getApiUrl(`/projects/${issue.project_id}/issues/${issue.iid}/resource_iteration_events`),
+    )) ?? [];
+
+  createIssueCardIterationInfo(
+    infoItems,
+    iterationEvents.filter((event) => event.action === "add").length - 1,
+  );
+}
+
+const enhanceIssueCard: MutationCallback = (mutationList: MutationRecord[]) => {
   for (const mutation of mutationList) {
     if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
       for (const added of mutation.addedNodes) {
@@ -647,50 +710,10 @@ const enhanceIssueCard: MutationCallback = async (mutationList: MutationRecord[]
           ? [added]
           : added.querySelectorAll("li.board-card");
         for (const node of cards) {
-          // GitLab now links cards to `/-/work_items/:iid`, which has no `.json` endpoint
-          const issueUrl = node
-            .querySelector<HTMLAnchorElement>("h3.board-card-title > a")
-            ?.href.replace("/-/work_items/", "/-/issues/");
-
-          const infoItems = node.querySelector<HTMLElement>(".board-info-items");
-
-          if (!issueUrl || !infoItems) {
-            continue;
-          }
-
-          const issue = await fetchGitLabData<Issue>(`${issueUrl}.json`);
-          if (!issue) {
-            continue;
-          }
-          // Collect merge requests for the issue
-          const relatedMergeRequest =
-            (await fetchGitLabData<MergeRequest[]>(
-              getApiUrl(`/projects/${issue.project_id}/issues/${issue.iid}/related_merge_requests`),
-            )) ?? [];
-
-          const total = relatedMergeRequest.length;
-
-          const opened = relatedMergeRequest.filter(
-            (mergeRequest) => mergeRequest.state === "opened",
-          ).length;
-
-          createIssueCardMergeRequestInfo(infoItems, opened, total);
-
-          // Collect rollover count for the issue
-          const iterationEvents =
-            (await fetchGitLabData<IterationEvent[]>(
-              getApiUrl(
-                `/projects/${issue.project_id}/issues/${issue.iid}/resource_iteration_events`,
-              ),
-            )) ?? [];
-
-          createIssueCardIterationInfo(
-            infoItems,
-            iterationEvents.filter((event) => event.action === "add").length - 1,
-          );
+          // cards load in parallel so a large board does not fill one by one
+          addIssueCardInfo(node);
         }
       }
-    } else if (mutation.type === "attributes") {
     }
   }
 };
@@ -716,14 +739,15 @@ const enhanceIssueBoard = () => {
 // Entry point
 //
 
-const issueDetailRegex = /\/issues\/\d+/u;
+// GitLab now serves issues under `/-/work_items/:iid`
+const issueDetailRegex = /\/(?:issues|work_items)\/\d+/u;
 
 const mergeRequestDetailRegex = /\/merge_requests\/(\d+)/u;
 
 const mergeRequestListRegex = /\/merge_requests(?!\/\d+)/u;
 
-// When the board is the only board in the repo, the url is `/boards`
-const issueBoardRegex = /\/boards(?:\/\d+)?(?:\/)?(?:\?|$)/u;
+// When the board is the only board in the repo, the url is `/boards`; the board router appends `#/`
+const issueBoardRegex = /\/boards(?:\/\d+)?(?:\/)?(?:\?|#|$)/u;
 
 const enhance = () => {
   if (mergeRequestListRegex.test(window.location.href)) {

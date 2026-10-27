@@ -1,6 +1,13 @@
 # GitLab booster
 
-This add long missing features in the merge request list and issue detail.
+This adds long missing features to GitLab for code reviewers.
+
+## Features
+
+- **Merge request list**: changed files and added/deleted lines, unresolved threads (`x of y`, or resolved), and a button to preview the merge request in a modal
+- **Issue detail**: the same diff and thread info on related open merge requests, with closed ones struck out and grayed
+- **Issue board**: open/total related merge requests and iteration rollover count on each card
+- **Merge request detail**: a "Convert to draft" button under reviewers
 
 ## Usage
 
@@ -18,9 +25,13 @@ This is configurable in tampermonkey.
 
 ## Preview
 
-![merge-request-list-after](https://github.com/user-attachments/assets/33d3442a-0a98-4d88-ba1e-30db98bcecce)
+Merge request list
 
-![issue-detail](https://github.com/user-attachments/assets/b3592273-98b2-4850-81a6-3b312a22c7c9)
+![merge-request-list](docs/merge-request-list.png)
+
+Related merge requests on an issue
+
+![issue-detail](docs/issue-detail.png)
 
 ## Development
 
